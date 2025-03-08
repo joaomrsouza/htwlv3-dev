@@ -1,7 +1,3 @@
-// TODO: Simular leitura de sensor e envio de pacotes de dados via wifi
-// TODO: Trabalhar em display scroll
-// TODO: Ser capaz de mudar o canal dinamicamente.
-
 #include <sstream>
 
 #include "htwlv3.h"
@@ -34,9 +30,9 @@ String webPage = R"rawliteral(
 </html>
 )rawliteral";
 
-#define HTWLV3_SERVER_SSID "LoRa_ESP32"
+// #define HTWLV3_SERVER_SSID "LoRa_ESP32"
 // #define HTWLV3_SERVER_SSID "LoRa_ESP32_2"
-#define HTWLV3_SERVER_PASSWORD "12345678"
+// #define HTWLV3_SERVER_PASSWORD "12345678"
 
 unsigned long count = 0;
 String rxdata;
@@ -50,13 +46,13 @@ void handleReceive();
 
 void setup()
 {
-  Board.begin(true, true, true, true);
+  Board.begin(true, true, false, true);
 
   Board.lora->setOnReceive(onReceive);
 
-  Board.server->on("/", HTTP_GET, handleRoot);
-  Board.server->on("/send", HTTP_POST, handleSend);
-  Board.server->on("/receive", HTTP_GET, handleReceive);
+  // Board.server->on("/", HTTP_GET, handleRoot);
+  // Board.server->on("/send", HTTP_POST, handleSend);
+  // Board.server->on("/receive", HTTP_GET, handleReceive);
 
   Board.println("setup");
 }
@@ -77,9 +73,7 @@ void sender()
 
   const char *message = data.str().c_str();
 
-  Board.display->clearDisplay();
-  Board.display->setCursor(0, 0);
-  Board.print("Sending:");
+  Board.print("Sending: ");
   Board.println(message);
 
   Board.lora->sendPacket(message);

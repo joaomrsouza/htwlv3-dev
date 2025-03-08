@@ -28,10 +28,6 @@ HTWLV3::HTWLV3()
   display = new Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, RST_OLED);
   lora = new HTLORAV3();
   server = new WebServer();
-
-  for (int i = 0; i < 8; i++)
-    _lineBuffer[i] = nullptr;
-  _currentLineBufferIndex = 0;
 }
 
 // Clear memory on deconstruction
@@ -133,7 +129,15 @@ void HTWLV3::print(const char *str)
     Serial.print(str);
 
   if (display)
-    this->_displayBreakWriteLine(str);
+  {
+    if (display->getCursorY() >= 64)
+    {
+      display->clearDisplay();
+      display->setCursor(0, 0);
+    }
+    display->print(str);
+    display->display();
+  }
 }
 
 void HTWLV3::println(const char *str)
@@ -142,72 +146,15 @@ void HTWLV3::println(const char *str)
     Serial.println(str);
 
   if (display)
-    this->_displayBreakWriteLine(str);
-}
-
-void HTWLV3::_displayBreakWriteLine(const char *str)
-{
-  const char *start = str;
-  const char *end;
-
-  while ((end = strchr(start, '\n')) != nullptr)
   {
-    // Calculate the length of the current line
-    size_t length = end - start;
-
-    // Allocate memory for the line and copy it
-    char *line = new char[length + 1]; // +1 for the null terminator
-    strncpy(line, start, length);
-    line[length] = '\0'; // Null-terminate the string
-
-    // TODO: Cortar em 21 chars
-
-    this->_displayWriteLine(line);
-    free(line);
-
-    start = end + 1; // Move past the newline character
-  }
-
-  // Handle the last segment if there's any remaining text
-  if (*start != '\0')
-  {
-    size_t length = strlen(start);
-    char *line = new char[length + 1];
-    strcpy(line, start);
-    this->_displayWriteLine(line);
-    free(line);
-  }
-}
-
-void HTWLV3::_displayWriteLine(const char *str)
-{
-  if (_currentLineBufferIndex == 8)
-  {
-    display->clearDisplay();
-    display->setCursor(0, 0);
-    free(_lineBuffer[0]);
-
-    for (int i = 0; i < 7; i++)
+    if (display->getCursorY() >= 64)
     {
-      _lineBuffer[i] = _lineBuffer[i + 1];
-      display->println(_lineBuffer[i]);
+      display->clearDisplay();
+      display->setCursor(0, 0);
     }
-
+    display->println(str);
     display->display();
-    _currentLineBufferIndex = 7;
   }
-
-  _lineBuffer[_currentLineBufferIndex] = (char *)malloc(strlen(str) + 1);
-
-  if (_lineBuffer[_currentLineBufferIndex] == nullptr)
-    return;
-
-  strcpy(_lineBuffer[_currentLineBufferIndex], str);
-
-  display->println(_lineBuffer[_currentLineBufferIndex]);
-  display->display();
-
-  _currentLineBufferIndex++;
 }
 
 HTWLV3 Board;

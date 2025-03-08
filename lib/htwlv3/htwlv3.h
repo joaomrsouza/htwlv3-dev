@@ -97,9 +97,6 @@ public:
   void println(const char *str);
 
 private:
-  char *_lineBuffer[8];
-  int _currentLineBufferIndex;
-
   void _displayBreakWriteLine(const char *str);
   void _displayWriteLine(const char *str);
 };
