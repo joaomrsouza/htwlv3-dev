@@ -34,21 +34,31 @@ String webPage = R"rawliteral(
 // #define HTWLV3_SERVER_SSID "LoRa_ESP32_2"
 // #define HTWLV3_SERVER_PASSWORD "12345678"
 
-unsigned long count = 0;
-String rxdata;
+// String rxdata;
 
-void sender();
+void sender(int count);
 void receiver();
 void onReceive(LoraDataPacket packet);
-void handleRoot();
-void handleSend();
-void handleReceive();
+void onSendDone();
+void onSendTimeout();
+// void handleRoot();
+// void handleSend();
+// void handleReceive();
+
+#define STATE_SEND 0
+#define STATE_RECEIVE 1
+#define STATE_WAIT 2
+
+int state = STATE_SEND;
+int count = 0;
 
 void setup()
 {
   Board.begin(true, true, false, true);
 
   Board.lora->setOnReceive(onReceive);
+  Board.lora->setOnSendDone(onSendDone);
+  Board.lora->setOnSendTimeout(onSendTimeout);
 
   // Board.server->on("/", HTTP_GET, handleRoot);
   // Board.server->on("/send", HTTP_POST, handleSend);
@@ -59,17 +69,28 @@ void setup()
 
 void loop()
 {
-  // receiver();
-  sender();
-
-  Board.process();
+  switch (state)
+  {
+  case STATE_SEND:
+    sender(count);
+    state = STATE_WAIT;
+    break;
+  case STATE_RECEIVE:
+    receiver();
+    state = STATE_WAIT;
+    break;
+  case STATE_WAIT:
+    Board.process();
+    break;
+  }
 }
 
-void sender()
+void sender(int count)
 {
+  delay(1000);
   std::ostringstream data;
 
-  data << "Packet data: " << count++;
+  data << count + 1;
 
   const char *message = data.str().c_str();
 
@@ -77,8 +98,16 @@ void sender()
   Board.println(message);
 
   Board.lora->sendPacket(message);
+}
 
-  delay(1000);
+void onSendDone()
+{
+  state = STATE_RECEIVE;
+}
+
+void onSendTimeout()
+{
+  state = STATE_SEND;
 }
 
 void receiver()
@@ -88,43 +117,41 @@ void receiver()
 
 void onReceive(LoraDataPacket packet)
 {
-  Board.display->clearDisplay();
-  Board.display->setCursor(0, 0);
-  Board.println("Received data:");
+  Board.print("Rec Data: ");
   Board.println(packet.data);
-  Board.println("End packet");
-  Board.println(String(packet.rssi).c_str());
 
-  std::string rxdata(packet.data);
+  count = atoi(packet.data);
+  state = STATE_SEND;
+  // std::string rxdata(packet.data);
 }
 
-void handleRoot()
-{
-  String page = webPage;
-  page.replace("%RECEIVED%", rxdata);
-  Board.server->send(200, "text/html", page);
-}
+// void handleRoot()
+// {
+//   String page = webPage;
+//   page.replace("%RECEIVED%", rxdata);
+//   Board.server->send(200, "text/html", page);
+// }
 
-void handleSend()
-{
-  String message = Board.server->arg("message");
+// void handleSend()
+// {
+//   String message = Board.server->arg("message");
 
-  Board.display->clearDisplay();
-  Board.display->setCursor(0, 0);
+//   Board.display->clearDisplay();
+//   Board.display->setCursor(0, 0);
 
-  Board.print("Enviando: ");
-  Board.println(message.c_str());
+//   Board.print("Enviando: ");
+//   Board.println(message.c_str());
 
-  Board.lora->sendPacket(message.c_str());
+//   Board.lora->sendPacket(message.c_str());
 
-  Board.println("Enviado!");
+//   Board.println("Enviado!");
 
-  Board.server->sendHeader("Location", "/");
-  Board.server->send(303);
-}
+//   Board.server->sendHeader("Location", "/");
+//   Board.server->send(303);
+// }
 
-// Exibe dados LoRa recebidos na web
-void handleReceive()
-{
-  Board.server->send(200, "text/plain", rxdata);
-}
+// // Exibe dados LoRa recebidos na web
+// void handleReceive()
+// {
+//   Board.server->send(200, "text/plain", rxdata);
+// }

@@ -15,11 +15,8 @@
  * https://github.com/joaomrsouza
  */
 
-// Include the HelTec LoRa V3 library
-#include "htlorav3.h"
-
-// Declare the LoRa instance
-HTLORAV3 lora = HTLORAV3();
+// Include the HelTec WiFi LoRa 32 V3 Board library
+#include "htwlv3.h"
 
 // Declare functions to receive events from the LoRa library
 void receiver();
@@ -27,41 +24,37 @@ void onReceive(LoraDataPacket packet);
 
 void setup()
 {
-  Serial.begin(115200);
-  Serial.println("LoRa Receiver Example");
-  Serial.println("Setting up...");
+  // Initialize the board with serial, display and LoRa enabled
+  Board.begin(true, true, false, true);
 
-  lora.begin();
-
-  Serial.println("LoRa: initialized.");
-  Serial.print("Freq: ");
-  Serial.println(HTLORAV3_FREQUENCY);
+  Board.println("LoRa Receiver Example");
+  Board.println("Setting up...");
 
   // Set the callback function for the LoRa library to receive packets
-  lora.setOnReceive(onReceive);
+  Board.lora->setOnReceive(onReceive);
 
-  Serial.println("Setup complete");
+  Board.println("Setup complete");
 }
 
 void loop()
 {
   receiver();
-  lora.process();
+  Board.process();
 }
 
 void receiver()
 {
-  lora.listenToPacket();
+  Board.lora->listenToPacket();
 }
 
 void onReceive(LoraDataPacket packet)
 {
-  Serial.println("Received Data:");
-  Serial.println(packet.data);
-  Serial.print("Size: ");
-  Serial.println(packet.size);
-  Serial.print("RSSI: ");
-  Serial.println(packet.rssi);
-  Serial.print("SNR: ");
-  Serial.println(packet.snr);
+  Board.println("Received Data:");
+  Board.println(packet.data);
+  Board.print("Size: ");
+  Board.println(String(packet.size).c_str());
+  Board.print("RSSI: ");
+  Board.println(String(packet.rssi).c_str());
+  Board.print("SNR: ");
+  Board.println(String(packet.snr).c_str());
 }

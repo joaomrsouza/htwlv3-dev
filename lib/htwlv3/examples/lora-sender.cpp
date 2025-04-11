@@ -15,11 +15,8 @@
  * https://github.com/joaomrsouza
  */
 
-// Include the HelTec LoRa V3 library
-#include "htlorav3.h"
-
-// Declare the LoRa instance
-HTLORAV3 lora = HTLORAV3();
+// Include the HelTec WiFi LoRa 32 V3 Board library
+#include "htwlv3.h"
 
 // Declare functions to receive events from the LoRa library
 void sender();
@@ -30,27 +27,23 @@ int count = 0;
 
 void setup()
 {
-  Serial.begin(115200);
-  Serial.println("LoRa Sender Example");
-  Serial.println("Setting up...");
+  // Initialize the board with serial, display and LoRa enabled
+  Board.begin(true, true, false, true);
 
-  lora.begin();
-
-  Serial.println("LoRa: initialized.");
-  Serial.print("Freq: ");
-  Serial.println(HTLORAV3_FREQUENCY);
+  Board.println("LoRa Sender Example");
+  Board.println("Setting up...");
 
   // Set the callback functions for the LoRa library. These callbacks are optional
-  lora.setOnSendDone(onSendDone);
-  lora.setOnSendTimeout(onSendTimeout);
+  Board.lora->setOnSendDone(onSendDone);
+  Board.lora->setOnSendTimeout(onSendTimeout);
 
-  Serial.println("Setup complete");
+  Board.println("Setup complete");
 }
 
 void loop()
 {
   sender();
-  lora.process();
+  Board.process();
 }
 
 void sender()
@@ -61,21 +54,21 @@ void sender()
 
   const char *message = data.str().c_str();
 
-  Serial.print("Sending: ");
-  Serial.println(message);
+  Board.print("Sending: ");
+  Board.println(message);
 
   // Send the message to the LoRa network
-  lora.sendPacket(message);
+  Board.lora->sendPacket(message);
 
   delay(1000);
 }
 
 void onSendDone()
 {
-  Serial.println("Send done");
+  Board.println("Send done");
 }
 
 void onSendTimeout()
 {
-  Serial.println("Send timeout");
+  Board.println("Send timeout");
 }

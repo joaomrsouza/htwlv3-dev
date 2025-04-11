@@ -21,6 +21,8 @@
 
 bool HTLORAV3::_idle = true;
 void (*HTLORAV3::_onReceive)(LoraDataPacket packet) = NULL;
+void (*HTLORAV3::_onSendDone)() = NULL;
+void (*HTLORAV3::_onSendTimeout)() = NULL;
 RadioEvents_t HTLORAV3::_RadioEvents;
 
 // === Main Class ===
@@ -100,6 +102,16 @@ void HTLORAV3::setOnReceive(void (*onReceive)(LoraDataPacket packet))
   _onReceive = onReceive;
 }
 
+void HTLORAV3::setOnSendDone(void (*onSendDone)())
+{
+  _onSendDone = onSendDone;
+}
+
+void HTLORAV3::setOnSendTimeout(void (*onSendTimeout)())
+{
+  _onSendTimeout = onSendTimeout;
+}
+
 void HTLORAV3::listenToPacket(uint32_t timeout)
 {
   if (!_idle)
@@ -114,12 +126,18 @@ void HTLORAV3::listenToPacket(uint32_t timeout)
 void HTLORAV3::_onTxDone()
 {
   _idle = true;
+
+  if (_onSendDone != NULL)
+    _onSendDone();
 }
 
 void HTLORAV3::_onTxTimeout()
 {
   Radio.Sleep();
   _idle = true;
+
+  if (_onSendTimeout != NULL)
+    _onSendTimeout();
 }
 
 void HTLORAV3::_onRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)

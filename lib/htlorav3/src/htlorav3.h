@@ -132,7 +132,7 @@ public:
 #endif
 
   /**
-   * @brief Set the OnReceive function called when a packet is received
+   * @brief Set the onReceive function called when a packet is received
    *
    * @warning This function should be called in `setup()` if you want to process received packets
    *
@@ -142,6 +142,20 @@ public:
    * @param onReceive Function that should be called when a packet arrives
    */
   void setOnReceive(void (*onReceive)(LoraDataPacket packet));
+
+  /**
+   * @brief Set the onSendDone function called after a packet is sent
+   *
+   * @param onSendDone Function that should be called after a packet is sent
+   */
+  void setOnSendDone(void (*onSendDone)());
+
+  /**
+   * @brief Set the onSendTimeout function called when a packet sent timeout
+   *
+   * @param onSendTimeout Function that should be called when a packet sent timeout
+   */
+  void setOnSendTimeout(void (*onSendTimeout)());
 
   /**
    * @brief Start listening for packets
@@ -170,6 +184,20 @@ private:
    * @note Call `setOnReceive()` to set this function
    */
   static void (*_onReceive)(LoraDataPacket packet);
+
+  /**
+   * @brief Function to be called after a packet is sent
+   *
+   * @note Call `setOnSendDone()` to set this function
+   */
+  static void (*_onSendDone)();
+
+  /**
+   * @brief Function to be called when a packet sent timeout
+   *
+   * @note Call `setOnSendTimeout()` to set this function
+   */
+  static void (*_onSendTimeout)();
 
   /**
    * @brief Internal function to be called when a packet is sent
