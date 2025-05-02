@@ -18,60 +18,41 @@
  *
  * */
 
-// TODO: verificar o funcionamento disso
-#ifdef __has_include(<sstream>)
-#define USE_SSTREAM
-#endif
-
-#ifdef USE_SSTREAM
-#include <sstream>
-#endif
+#ifndef HTLORAV3_H
+#define HTLORAV3_H
 
 // LoRa Libs
 #include <SPI.h>
 #include "LoRaWan_APP.h"
 
-// === Default Config ===
-
-#ifndef HTLORAV3_FREQUENCY
-#define HTLORAV3_FREQUENCY 470E6
-#endif
-
-#ifndef HTLORAV3_BANDWIDTH
-#define HTLORAV3_BANDWIDTH 0 // [0: 125 kHz, 1: 250 kHz, 2: 500 kHz, 3: Reserved]
-#endif
-
-#ifndef HTLORAV3_SPREADING_FACTOR
-#define HTLORAV3_SPREADING_FACTOR 7 // [SF7..SF12]
-#endif
-
-#ifndef HTLORAV3_CODINGRATE
-#define HTLORAV3_CODINGRATE 1 // [1: 4/5, 2: 4/6, 3: 4/7, 4: 4/8]
-#endif
-
-#ifndef HTLORAV3_PREAMBLE_LENGTH
-#define HTLORAV3_PREAMBLE_LENGTH 8 // Same for Tx and Rx
-#endif
-
-#ifndef HTLORAV3_FIX_LENGTH_PAYLOAD_ON
-#define HTLORAV3_FIX_LENGTH_PAYLOAD_ON false
-#endif
-
-#ifndef HTLORAV3_IQ_INVERSION_ON
-#define HTLORAV3_IQ_INVERSION_ON false
-#endif
-
-#ifndef HTLORAV3_TX_OUT_POWER
-#define HTLORAV3_TX_OUT_POWER 5 // dBm
-#endif
-
-#ifndef HTLORAV3_RX_TIMEOUT
-#define HTLORAV3_RX_TIMEOUT 0 // Symbols
-#endif
-
-// === End Default Config ===
-
 // === Structs ===
+
+/**
+ * @brief Config object for the LoRa Chip
+ */
+typedef struct
+{
+  // Channel RF frequency
+  double frequency;
+  // Bandwidth - [0: 125 kHz, 1: 250 kHz, 2: 500 kHz, 3: Reserved]
+  int bandwidth;
+  // Spreading Factor - [SF7..SF12]
+  int spreadingFactor;
+  // Coding Rate - [1: 4/5, 2: 4/6, 3: 4/7, 4: 4/8]
+  int codingRate;
+  // Preamble Length - Symbols - Same for Tx and Rx
+  int preambleLength;
+  // Fix Length Payload On
+  bool fixLengthPayloadOn;
+  // IQ Inversion On
+  bool iqInversionOn;
+  // Output Power - dBm
+  int txOutPower;
+  // TX Timeout - ms
+  int txTimeout;
+  // RX Timeout - Symbols
+  int rxTimeout;
+} HTLORAV3Config;
 
 typedef struct
 {
@@ -95,6 +76,7 @@ class HTLORAV3
 {
 public:
   HTLORAV3();
+  ~HTLORAV3();
 
   /**
    * @brief Setup the configured constants and binding methods
@@ -103,6 +85,15 @@ public:
    */
   void begin();
 
+  // === Getters ===
+
+  /**
+   * @brief Get the current config object
+   *
+   * @return HTLORAV3Config*
+   */
+  HTLORAV3Config *getConfig();
+
   /**
    * @brief Get the Idle state of LoRa Chip
    *
@@ -110,26 +101,14 @@ public:
    */
   bool getIdle();
 
-  /**
-   * @brief Process the radio interruption requests
-   *
-   * @warning This function should be called on `loop()`
-   *
-   * @note Equivalent to Radio.IrqProcess
-   */
-  void process();
+  // === Setters ===
 
   /**
-   * @brief Send data packets
+   * @brief Set the config object
    *
-   * @param data Data string to be sent
-   * @return int [0: ok, 1: busy]
+   * @param config Config object
    */
-  int sendPacket(const char *data);
-
-#ifdef USE_SSTREAM
-  int sendPacket(std::stringstream data);
-#endif
+  void setConfig(HTLORAV3Config *config);
 
   /**
    * @brief Set the onReceive function called when a packet is received
@@ -157,6 +136,25 @@ public:
    */
   void setOnSendTimeout(void (*onSendTimeout)());
 
+  // === Handlers ===
+
+  /**
+   * @brief Process the radio interruption requests
+   *
+   * @warning This function should be called on `loop()`
+   *
+   * @note Equivalent to Radio.IrqProcess
+   */
+  void process();
+
+  /**
+   * @brief Send data packets
+   *
+   * @param data Data string to be sent
+   * @return int [0: ok, 1: busy]
+   */
+  int sendPacket(const char *data);
+
   /**
    * @brief Start listening for packets
    *
@@ -169,6 +167,11 @@ public:
 
 private:
   /**
+   * @brief Config object
+   */
+  HTLORAV3Config *_config;
+
+  /**
    * @brief RadioEvents struct for setup Radio Lib
    */
   static RadioEvents_t _RadioEvents;
@@ -177,6 +180,13 @@ private:
    * @brief LoRa Chip state
    */
   static bool _idle;
+
+  // === Private Handlers ===
+
+  /**
+   * @brief Initialize the config object
+   */
+  void _initConfig();
 
   /**
    * @brief Function to be called when a packet is received
@@ -198,6 +208,8 @@ private:
    * @note Call `setOnSendTimeout()` to set this function
    */
   static void (*_onSendTimeout)();
+
+  // === Static Handlers ===
 
   /**
    * @brief Internal function to be called when a packet is sent
@@ -226,3 +238,5 @@ private:
  * @brief Use this variable to manipulate this library
  */
 extern HTLORAV3 LoRa;
+
+#endif // HTLORAV3_H

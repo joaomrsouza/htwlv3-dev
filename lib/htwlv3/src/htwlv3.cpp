@@ -20,14 +20,12 @@
 
 #include "htwlv3.h"
 
-#include <vector>
-
 // Declare the display and lora classes
 HTWLV3::HTWLV3()
 {
   display = new Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, RST_OLED);
   lora = new HTLORAV3();
-  server = new WebServer();
+  wifi = new HTWIFIV3();
 }
 
 // Clear memory on deconstruction
@@ -35,22 +33,24 @@ HTWLV3::~HTWLV3()
 {
   delete display;
   delete lora;
-  delete server;
+  delete wifi;
 }
 
-void HTWLV3::begin(bool serialEnable, bool displayEnable, bool serverEnable, bool loraEnable)
+void HTWLV3::begin()
 {
+  _initConfig();
+
   // === Serial ===
-  if (serialEnable)
+  if (_config->serialEnable)
   {
-    Serial.begin(115200);
+    Serial.begin(_config->serialSpeed);
     Serial.flush();
     delay(50);
     Serial.println("Serial: initialized.");
   }
 
   // === Display ===
-  if (displayEnable)
+  if (_config->displayEnable)
   {
     // Display Reset via software
     pinMode(RST_OLED, OUTPUT);
@@ -82,13 +82,13 @@ void HTWLV3::begin(bool serialEnable, bool displayEnable, bool serverEnable, boo
   }
 
   // === LoRa ===
-  if (loraEnable)
+  if (_config->loraEnable)
   {
     lora->begin();
 
     this->println("LoRa: initialized.");
     this->print("Freq: ");
-    this->println(String(HTLORAV3_FREQUENCY).c_str());
+    this->println(String(lora->getConfig()->frequency).c_str());
   }
   else
   {
@@ -96,31 +96,64 @@ void HTWLV3::begin(bool serialEnable, bool displayEnable, bool serverEnable, boo
     lora = nullptr;
   }
 
-  // === Server ===
-  if (serverEnable)
+  // === WiFi ===
+  if (_config->wifiEnable)
   {
-    WiFi.softAP(HTWLV3_SERVER_SSID, HTWLV3_SERVER_PASSWORD);
-    IPAddress IP = WiFi.softAPIP();
-    server->begin();
+    wifi->begin();
 
-    this->println("WiFi Server: initialized.");
-    this->print("IP: ");
-    this->println(IP.toString().c_str());
+    HTWIFIV3Config *config = wifi->getConfig();
+
+    if (config->clientEnable)
+    {
+      this->println("Client: initialized.");
+    }
+
+    if (config->serverEnable)
+    {
+      this->println("Server: initialized.");
+      IPAddress ip = wifi->server->getIP();
+      this->print("IP: ");
+      this->println(ip.toString().c_str());
+    }
   }
   else
   {
-    delete server;
-    server = nullptr;
+
+    this->println("WiFi: DELETE");
+    delete wifi;
+    wifi = nullptr;
   };
 }
+
+// === Getters ===
+
+HTWLV3Config *HTWLV3::getConfig()
+{
+  return _config;
+}
+
+// === Setters ===
+
+void HTWLV3::setConfig(HTWLV3Config *config)
+{
+  _config = new HTWLV3Config();
+
+  _config->serialEnable = config->serialEnable;
+  _config->serialSpeed = config->serialSpeed;
+  _config->displayEnable = config->displayEnable;
+  _config->loraEnable = config->loraEnable;
+  _config->wifiEnable = config->wifiEnable;
+}
+
+// === Handlers ===
 
 void HTWLV3::process()
 {
   if (lora)
     lora->process();
 
-  if (server)
-    server->handleClient();
+  if (wifi)
+    wifi->process();
 }
 
 void HTWLV3::print(const char *str)
@@ -155,6 +188,23 @@ void HTWLV3::println(const char *str)
     display->println(str);
     display->display();
   }
+}
+
+// === Private Handlers ===
+
+void HTWLV3::_initConfig()
+{
+
+  if (_config != nullptr)
+    return;
+
+  _config = new HTWLV3Config();
+
+  _config->serialEnable = false;
+  _config->serialSpeed = 115200;
+  _config->displayEnable = false;
+  _config->loraEnable = false;
+  _config->wifiEnable = false;
 }
 
 HTWLV3 Board;

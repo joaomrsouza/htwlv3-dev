@@ -18,6 +18,8 @@
 // Include the HelTec LoRa V3 library
 #include "htlorav3.h"
 
+#include <sstream>
+
 // Declare the LoRa instance
 HTLORAV3 lora = HTLORAV3();
 
@@ -38,7 +40,7 @@ void setup()
 
   Serial.println("LoRa: initialized.");
   Serial.print("Freq: ");
-  Serial.println(HTLORAV3_FREQUENCY);
+  Serial.println(lora.getConfig()->frequency);
 
   // Set the callback functions for the LoRa library. These callbacks are optional
   lora.setOnSendDone(onSendDone);

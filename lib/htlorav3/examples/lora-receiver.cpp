@@ -35,7 +35,7 @@ void setup()
 
   Serial.println("LoRa: initialized.");
   Serial.print("Freq: ");
-  Serial.println(HTLORAV3_FREQUENCY);
+  Serial.println(lora.getConfig()->frequency);
 
   // Set the callback function for the LoRa library to receive packets
   lora.setOnReceive(onReceive);

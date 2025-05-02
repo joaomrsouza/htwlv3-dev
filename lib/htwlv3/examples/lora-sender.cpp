@@ -18,6 +18,11 @@
 // Include the HelTec WiFi LoRa 32 V3 Board library
 #include "htwlv3.h"
 
+#include <sstream>
+
+// Declare the config function
+void config();
+
 // Declare functions to receive events from the LoRa library
 void sender();
 void onSendDone();
@@ -27,8 +32,11 @@ int count = 0;
 
 void setup()
 {
-  // Initialize the board with serial, display and LoRa enabled
-  Board.begin(true, true, false, true);
+  // Configure the board before starting
+  config();
+
+  // Initialize the board
+  Board.begin();
 
   Board.println("LoRa Sender Example");
   Board.println("Setting up...");
@@ -71,4 +79,17 @@ void onSendDone()
 void onSendTimeout()
 {
   Board.println("Send timeout");
+}
+
+void config()
+{
+  HTWLV3Config boardConfig;
+
+  boardConfig.serialEnable = true;
+  boardConfig.serialSpeed = 115200;
+  boardConfig.displayEnable = true;
+  boardConfig.loraEnable = true;
+  boardConfig.wifiEnable = false;
+
+  Board.setConfig(&boardConfig);
 }

@@ -18,6 +18,9 @@
  * https://github.com/joaomrsouza
  */
 
+#ifndef HTWLV3_H
+#define HTWLV3_H
+
 #include <Arduino.h>
 
 // Display Libs
@@ -28,19 +31,19 @@
 // LoRa Lib
 #include "htlorav3.h"
 
-// WiFi Libs
-#include <WiFi.h>
-#include <WebServer.h>
+// WiFi Lib
+#include "htwifiv3.h"
 
-// === Default Config ===
+// === Structs ===
 
-#ifndef HTWLV3_SERVER_SSID
-#define HTWLV3_SERVER_SSID "HTWLV3 Server"
-#endif
-
-#ifndef HTWLV3_SERVER_PASSWORD
-#define HTWLV3_SERVER_PASSWORD "12345678"
-#endif
+typedef struct
+{
+  bool serialEnable;
+  int serialSpeed;
+  bool displayEnable;
+  bool loraEnable;
+  bool wifiEnable;
+} HTWLV3Config;
 
 /**
  * @brief A class to use HelTec Board peripherals (HelTec WiFi LoRa 32 V3)
@@ -64,20 +67,34 @@ public:
   HTLORAV3 *lora;
 
   /**
-   *@brief WebServer class to work with the WiFi Chip as a server
+   *@brief HTWIFIV3 class to work with the WiFi Chip
    */
-  WebServer *server;
+  HTWIFIV3 *wifi;
 
   /**
    * @brief Initialize the Board peripherals
-   *
-   * @param serialEnable Enable Serial (speed 115200)
-   * @param displayEnable Enable OLED Display
-   * @param serverEnable Enable WiFi Chip as a server
-   * @param loraEnable Enable LoRa Chip
-   * @param loraFreq Frequency of work for the LoRa Chip
    */
-  void begin(bool serialEnable = false, bool displayEnable = false, bool serverEnable = false, bool loraEnable = false);
+  void begin();
+
+  // === Getters ===
+
+  /**
+   * @brief Get the current config object
+   *
+   * @return HTWLV3Config*
+   */
+  HTWLV3Config *getConfig();
+
+  // === Setters ===
+
+  /**
+   * @brief Set the config object
+   *
+   * @param config Config object
+   */
+  void setConfig(HTWLV3Config *config);
+
+  // === Handlers ===
 
   /**
    * @brief Process all the enabled devices
@@ -97,8 +114,19 @@ public:
   void println(const char *str);
 
 private:
-  void _displayBreakWriteLine(const char *str);
-  void _displayWriteLine(const char *str);
+  /**
+   * @brief Config object
+   */
+  HTWLV3Config *_config;
+
+  // === Private Handlers ===
+
+  /**
+   * @brief Initialize the config object
+   */
+  void _initConfig();
 };
 
 extern HTWLV3 Board;
+
+#endif // HTWLV3_H
