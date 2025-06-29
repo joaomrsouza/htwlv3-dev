@@ -77,7 +77,9 @@ void loop()
 void sender(int count)
 {
   delay(1000);
-  const char *message = String(count + 1).c_str();
+
+  String str = String(count + 1);
+  const char *message = str.c_str();
 
   Board.print("Sending: ");
   Board.println(message);

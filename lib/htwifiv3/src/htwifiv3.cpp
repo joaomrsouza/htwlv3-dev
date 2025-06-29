@@ -178,6 +178,7 @@ JsonDocument HTWIFIV3Client::_setupRequest(String url)
   JsonDocument response;
 
   response["data"] = JsonObject();
+  response["status"] = NULL;
   response["error"] = false;
   response["error_message"] = "";
 
@@ -202,6 +203,8 @@ JsonDocument HTWIFIV3Client::_setupRequest(String url)
 
 JsonDocument HTWIFIV3Client::_processRequest(JsonDocument response, int responseCode)
 {
+  response["status"] = responseCode;
+
   if (responseCode <= 0)
   {
 

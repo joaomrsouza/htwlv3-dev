@@ -23,6 +23,7 @@
 
 bool HTLORAV3::_idle = true;
 void (*HTLORAV3::_onReceive)(LoraDataPacket packet) = NULL;
+void (*HTLORAV3::_onReceiveTimeout)() = NULL;
 void (*HTLORAV3::_onSendDone)() = NULL;
 void (*HTLORAV3::_onSendTimeout)() = NULL;
 RadioEvents_t HTLORAV3::_RadioEvents;
@@ -52,6 +53,7 @@ void HTLORAV3::begin()
   _RadioEvents.TxDone = _onTxDone;
   _RadioEvents.TxTimeout = _onTxTimeout;
   _RadioEvents.RxDone = _onRxDone;
+  _RadioEvents.RxTimeout = _onRxTimeout;
 
   // Initialize and configure Radio
   Radio.Init(&_RadioEvents);
@@ -124,6 +126,11 @@ void HTLORAV3::setOnReceive(void (*onReceive)(LoraDataPacket packet))
   _onReceive = onReceive;
 }
 
+void HTLORAV3::setOnReceiveTimeout(void (*onReceiveTimeout)())
+{
+  _onReceiveTimeout = onReceiveTimeout;
+}
+
 void HTLORAV3::setOnSendDone(void (*onSendDone)())
 {
   _onSendDone = onSendDone;
@@ -138,6 +145,7 @@ void HTLORAV3::setOnSendTimeout(void (*onSendTimeout)())
 
 void HTLORAV3::process()
 {
+  Mcu.timerhandler();
   Radio.IrqProcess();
 }
 
@@ -225,4 +233,11 @@ void HTLORAV3::_onRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t s
   _idle = true;
 }
 
+void HTLORAV3::_onRxTimeout()
+{
+  _idle = true;
+
+  if (_onReceiveTimeout != NULL)
+    _onReceiveTimeout();
+}
 HTLORAV3 LoRa;

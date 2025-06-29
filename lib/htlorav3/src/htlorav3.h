@@ -123,6 +123,13 @@ public:
   void setOnReceive(void (*onReceive)(LoraDataPacket packet));
 
   /**
+   * @brief Set the onReceiveTimeout function called when `listenToPacket()` timeout
+   *
+   * @param onReceiveTimeout Function that should be called when `listenToPacket()` timeout
+   */
+  void setOnReceiveTimeout(void (*onReceiveTimeout)());
+
+  /**
    * @brief Set the onSendDone function called after a packet is sent
    *
    * @param onSendDone Function that should be called after a packet is sent
@@ -196,6 +203,13 @@ private:
   static void (*_onReceive)(LoraDataPacket packet);
 
   /**
+   * @brief Function to be called when `listenToPacket()` timeout
+   *
+   * @note Call `setOnReceiveTimeout()` to set this function
+   */
+  static void (*_onReceiveTimeout)();
+
+  /**
    * @brief Function to be called after a packet is sent
    *
    * @note Call `setOnSendDone()` to set this function
@@ -232,6 +246,11 @@ private:
    * @param snr Signal-to-Noise Ratio
    */
   static void _onRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr);
+
+  /**
+   * @brief Internal function to be called when `listenToPacket()` timeout
+   */
+  static void _onRxTimeout();
 };
 
 /**
