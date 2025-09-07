@@ -8,8 +8,7 @@
  * It sends a message every second to the LoRa network.
  *
  * Depends On:
- * - htlorav3
- * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
+ * - htwlv3
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
  * https://github.com/joaomrsouza
@@ -83,13 +82,11 @@ void onSendTimeout()
 
 void config()
 {
-  HTWLV3Config boardConfig;
+  HTWLV3Config boardConfig = HTWLV3::getDefaultConfig();
 
   boardConfig.serialEnable = true;
-  boardConfig.serialSpeed = 115200;
   boardConfig.displayEnable = true;
   boardConfig.loraEnable = true;
-  boardConfig.wifiEnable = false;
 
-  Board.setConfig(&boardConfig);
+  Board.setConfig(boardConfig);
 }

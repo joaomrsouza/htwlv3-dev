@@ -8,7 +8,7 @@
  *
  * Configuration:
  *
- * It's possible to reconfigure some parameters for the LoRa Chip by redefining them in the main file, check "=== Default Config ===" section in the header file.
+ * It's possible to configure some parameters for the LoRa Chip by using the `setConfig()` and `updateConfig()` methods.
  *
  * Depends On:
  * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
@@ -32,21 +32,19 @@ RadioEvents_t HTLORAV3::_RadioEvents;
 
 HTLORAV3::HTLORAV3()
 {
-  _config = nullptr;
+  _config = getDefaultConfig();
   _idle = true;
 }
 
 // Clear memory on deconstruction
 HTLORAV3::~HTLORAV3()
 {
-  delete _config;
+  stop();
 }
 
 void HTLORAV3::begin()
 {
-  _initConfig();
-
-  // TODO: Fazer anotações sobre essas vars elas estão como flag no compilador mas não podem ser alteradas
+  // Pass the board type and the slow clock type for Heltec Wifi LoRa 32 V3 Board
   Mcu.begin(HELTEC_BOARD, SLOW_CLK_TPYE);
 
   // Bind Radio events
@@ -57,43 +55,20 @@ void HTLORAV3::begin()
 
   // Initialize and configure Radio
   Radio.Init(&_RadioEvents);
-  Radio.SetChannel(_config->frequency);
 
-  Radio.SetTxConfig(
-      MODEM_LORA,
-      _config->txOutPower,
-      0,
-      _config->bandwidth,
-      _config->spreadingFactor,
-      _config->codingRate,
-      _config->preambleLength,
-      _config->fixLengthPayloadOn,
-      true,
-      0,
-      0,
-      _config->iqInversionOn,
-      _config->txTimeout);
+  // Initialize radio with config
+  _initializeLora();
+}
 
-  Radio.SetRxConfig(
-      MODEM_LORA,
-      _config->bandwidth,
-      _config->spreadingFactor,
-      _config->codingRate,
-      0,
-      _config->preambleLength,
-      _config->rxTimeout,
-      _config->fixLengthPayloadOn,
-      0,
-      true,
-      0,
-      0,
-      _config->iqInversionOn,
-      true);
+void HTLORAV3::stop()
+{
+  Radio.Sleep();
+  _idle = true;
 }
 
 // === Getters ===
 
-HTLORAV3Config *HTLORAV3::getConfig()
+HTLORAV3Config HTLORAV3::getConfig() const
 {
   return _config;
 }
@@ -103,22 +78,38 @@ bool HTLORAV3::getIdle()
   return _idle;
 }
 
+HTLORAV3Config HTLORAV3::getDefaultConfig()
+{
+  HTLORAV3Config defaultConfig;
+
+  defaultConfig.frequency = 915E6;
+  defaultConfig.bandwidth = 0;
+  defaultConfig.spreadingFactor = 7;
+  defaultConfig.codingRate = 1;
+  defaultConfig.preambleLength = 8;
+  defaultConfig.fixLengthPayloadOn = false;
+  defaultConfig.iqInversionOn = false;
+  defaultConfig.txOutPower = 5;
+  defaultConfig.txTimeout = 3000;
+  defaultConfig.rxTimeout = 0;
+
+  return defaultConfig;
+}
+
 // === Setters ===
 
-void HTLORAV3::setConfig(HTLORAV3Config *config)
+void HTLORAV3::setConfig(const HTLORAV3Config &config)
 {
-  _config = new HTLORAV3Config();
+  _config = config;
+}
 
-  _config->frequency = config->frequency;
-  _config->bandwidth = config->bandwidth;
-  _config->spreadingFactor = config->spreadingFactor;
-  _config->codingRate = config->codingRate;
-  _config->preambleLength = config->preambleLength;
-  _config->fixLengthPayloadOn = config->fixLengthPayloadOn;
-  _config->iqInversionOn = config->iqInversionOn;
-  _config->txOutPower = config->txOutPower;
-  _config->txTimeout = config->txTimeout;
-  _config->rxTimeout = config->rxTimeout;
+void HTLORAV3::updateConfig(const HTLORAV3Config &config)
+{
+  stop();
+
+  setConfig(config);
+
+  _initializeLora();
 }
 
 void HTLORAV3::setOnReceive(void (*onReceive)(LoraDataPacket packet))
@@ -172,23 +163,40 @@ void HTLORAV3::listenToPacket(uint32_t timeout)
 
 // === Private Handlers ===
 
-void HTLORAV3::_initConfig()
+void HTLORAV3::_initializeLora()
 {
-  if (_config != nullptr)
-    return;
+  Radio.SetChannel(_config.frequency);
 
-  _config = new HTLORAV3Config();
+  Radio.SetTxConfig(
+      MODEM_LORA,
+      _config.txOutPower,
+      0,
+      _config.bandwidth,
+      _config.spreadingFactor,
+      _config.codingRate,
+      _config.preambleLength,
+      _config.fixLengthPayloadOn,
+      true,
+      0,
+      0,
+      _config.iqInversionOn,
+      _config.txTimeout);
 
-  _config->frequency = 470E6;
-  _config->bandwidth = 0;
-  _config->spreadingFactor = 7;
-  _config->codingRate = 1;
-  _config->preambleLength = 8;
-  _config->fixLengthPayloadOn = false;
-  _config->iqInversionOn = false;
-  _config->txOutPower = 5;
-  _config->txTimeout = 3000;
-  _config->rxTimeout = 0;
+  Radio.SetRxConfig(
+      MODEM_LORA,
+      _config.bandwidth,
+      _config.spreadingFactor,
+      _config.codingRate,
+      0,
+      _config.preambleLength,
+      _config.rxTimeout,
+      _config.fixLengthPayloadOn,
+      0,
+      true,
+      0,
+      0,
+      _config.iqInversionOn,
+      true);
 }
 
 void HTLORAV3::_onTxDone()

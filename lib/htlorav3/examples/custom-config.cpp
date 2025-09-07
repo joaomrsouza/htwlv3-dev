@@ -4,11 +4,9 @@
  *
  * Depends On:
  * - htlorav3
- * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
  * https://github.com/joaomrsouza
- *
  */
 
 // Include the HelTec LoRa V3 library
@@ -38,20 +36,22 @@ void loop()
 // Custom config function
 void config()
 {
-  HTLORAV3Config config;
+  // All the available default configs are commented and already set, change only what you need
+
+  HTLORAV3Config config = HTLORAV3::getDefaultConfig();
 
   // Set the custom config
-  config.frequency = 470E6;
-  config.bandwidth = 0;
-  config.spreadingFactor = 7;
-  config.codingRate = 1;
-  config.preambleLength = 8;
-  config.fixLengthPayloadOn = false;
-  config.iqInversionOn = false;
-  config.txOutPower = 5;
-  config.txTimeout = 3000;
-  config.rxTimeout = 0;
+  // config.frequency = 915E6;
+  // config.bandwidth = 0;
+  // config.spreadingFactor = 7;
+  // config.codingRate = 1;
+  // config.preambleLength = 8;
+  // config.fixLengthPayloadOn = false;
+  // config.iqInversionOn = false;
+  config.txOutPower = 12;
+  // config.txTimeout = 3000;
+  // config.rxTimeout = 0;
 
   // Apply the custom config
-  lora.setConfig(&config);
+  lora.setConfig(config);
 }

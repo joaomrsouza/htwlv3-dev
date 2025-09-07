@@ -8,15 +8,14 @@
  *
  * Configuration:
  *
- * It's possible to reconfigure some parameters by redefining them in the main file, check "=== Default Config ===" section bellow.
+ * It's possible to configure some parameters by using the `setConfig()` and `updateConfig()` methods.
  *
  * Depends On:
  * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
  * https://github.com/joaomrsouza
- *
- * */
+ */
 
 #ifndef HTWIFIV3_H
 #define HTWIFIV3_H
@@ -41,14 +40,14 @@ typedef struct
 
 typedef struct
 {
-  const char *ssid;
-  const char *password;
+  String ssid;
+  String password;
 } HTWIFIV3ClientConfig;
 
 typedef struct
 {
-  const char *ssid;
-  const char *password;
+  String ssid;
+  String password;
 } HTWIFIV3ServerConfig;
 
 // === Classes ===
@@ -70,15 +69,16 @@ public:
   ~HTWIFIV3Client();
 
   void begin();
+  void stop();
 
   // === Getters ===
 
   /**
    * @brief Get the current config object
    *
-   * @return HTWIFIV3ClientConfig*
+   * @return HTWIFIV3ClientConfig
    */
-  HTWIFIV3ClientConfig *getConfig();
+  HTWIFIV3ClientConfig getConfig() const;
 
   /**
    * @brief Get if the WiFi is connected
@@ -87,14 +87,37 @@ public:
    */
   bool getIsConnected();
 
+  /**
+   * @brief Get the default configuration object
+   *
+   * @return HTWIFIV3ClientConfig Default configuration with standard values
+   */
+  static HTWIFIV3ClientConfig getDefaultConfig();
+
   // === Setters ===
 
   /**
    * @brief Set the config object
    *
    * @param config Config object
+   *
+   * @warning Do not use this to change the configuration after the client is initialized, use `updateConfig()` instead
    */
-  void setConfig(HTWIFIV3ClientConfig *config);
+  void setConfig(const HTWIFIV3ClientConfig &config);
+
+  /**
+   * @brief Update configuration after the client is initialized
+   *
+   * @param config New configuration
+   *
+   * @warning Do not use this to change the configuration before the client is initialized, use `setConfig()` instead
+   *
+   * @note Attention points:
+   * - This function will disconnect the client
+   * - This function will reset the client
+   * - The client should reconnect to the network after the configuration is updated
+   */
+  void updateConfig(const HTWIFIV3ClientConfig &config);
 
   /**
    * @brief Set the SSL config object
@@ -126,7 +149,7 @@ private:
   /**
    * @brief Config object
    */
-  HTWIFIV3ClientConfig *_config;
+  HTWIFIV3ClientConfig _config;
 
   /**
    * @brief WiFiClient class to work with the WiFi Chip as a client
@@ -146,9 +169,9 @@ private:
   // === Private Handlers ===
 
   /**
-   * @brief Initialize the config object
+   * @brief Initialize the WiFi client
    */
-  void _initConfig();
+  void _initializeWiFiClient();
 
   /**
    * @brief Setup the request
@@ -186,15 +209,16 @@ public:
   ~HTWIFIV3Server();
 
   void begin();
+  void stop();
 
   // === Getters ===
 
   /**
    * @brief Get the current config object
    *
-   * @return HTWIFIV3ServerConfig*
+   * @return HTWIFIV3ServerConfig
    */
-  HTWIFIV3ServerConfig *getConfig();
+  HTWIFIV3ServerConfig getConfig() const;
 
   /**
    * @brief Get the IP address of the server
@@ -203,6 +227,13 @@ public:
    */
   IPAddress getIP();
 
+  /**
+   * @brief Get the default configuration object
+   *
+   * @return HTWIFIV3ServerConfig Default configuration with standard values
+   */
+  static HTWIFIV3ServerConfig getDefaultConfig();
+
   // === Setters ===
 
   /**
@@ -210,7 +241,20 @@ public:
    *
    * @param config Config object
    */
-  void setConfig(HTWIFIV3ServerConfig *config);
+  void setConfig(const HTWIFIV3ServerConfig &config);
+
+  /**
+   * @brief Update configuration after the server is initialized
+   *
+   * @param config New configuration
+   *
+   * @warning Do not use this to change the configuration before the server is initialized, use `setConfig()` instead
+   *
+   * @note Attention points:
+   * - This function will stop the server
+   * - The server should be started again after the configuration is updated
+   */
+  void updateConfig(const HTWIFIV3ServerConfig &config);
 
   // === Handlers ===
 
@@ -218,14 +262,14 @@ private:
   /**
    * @brief Config object
    */
-  HTWIFIV3ServerConfig *_config;
+  HTWIFIV3ServerConfig _config;
 
   // === Private Handlers ===
 
   /**
-   * @brief Initialize the config object
+   * @brief Initialize the WiFi server
    */
-  void _initConfig();
+  void _initializeWiFiServer();
 };
 
 // === Main Class ===
@@ -261,14 +305,26 @@ public:
    */
   void begin();
 
+  /**
+   * @brief Stop the WiFi Chip
+   */
+  void stop();
+
   // === Getters ===
 
   /**
    * @brief Get the current config object
    *
-   * @return HTWIFIV3Config*
+   * @return HTWIFIV3Config
    */
-  HTWIFIV3Config *getConfig();
+  HTWIFIV3Config getConfig() const;
+
+  /**
+   * @brief Get the default configuration object
+   *
+   * @return HTWIFIV3Config Default configuration with standard values
+   */
+  static HTWIFIV3Config getDefaultConfig();
 
   // === Setters ===
 
@@ -277,7 +333,20 @@ public:
    *
    * @param config Config object
    */
-  void setConfig(HTWIFIV3Config *config);
+  void setConfig(const HTWIFIV3Config &config);
+
+  /**
+   * @brief Update configuration after the WiFi is initialized
+   *
+   * @param config New configuration
+   *
+   * @warning Do not use this to change the configuration before the WiFi is initialized, use `setConfig()` instead
+   *
+   * @note Attention points:
+   * - This function will disconnect the client and server
+   * - The client and server should be initialized again after the configuration is updated
+   */
+  void updateConfig(const HTWIFIV3Config &config);
 
   // === Handlers ===
 
@@ -294,14 +363,14 @@ private:
   /**
    * @brief Config object
    */
-  HTWIFIV3Config *_config;
+  HTWIFIV3Config _config;
 
   // === Private Handlers ===
 
   /**
-   * @brief Initialize the config object
+   * @brief Initialize the WiFi
    */
-  void _initConfig();
+  void _initializeWiFi(bool force = false);
 };
 
 #endif // HTWIFIV3_H

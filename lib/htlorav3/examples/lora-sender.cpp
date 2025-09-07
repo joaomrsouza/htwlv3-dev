@@ -5,11 +5,10 @@
  * Description:
  *
  * This example demonstrates how to use the HelTec WiFi LoRa 32 V3 Board as a sender.
- * It sends a message every second to the LoRa network.
+ * It sends a message every second to the LoRa network and prints the message to the serial monitor.
  *
  * Depends On:
  * - htlorav3
- * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
  * https://github.com/joaomrsouza
@@ -40,7 +39,7 @@ void setup()
 
   Serial.println("LoRa: initialized.");
   Serial.print("Freq: ");
-  Serial.println(lora.getConfig()->frequency);
+  Serial.println(lora.getConfig().frequency);
 
   // Set the callback functions for the LoRa library. These callbacks are optional
   lora.setOnSendDone(onSendDone);

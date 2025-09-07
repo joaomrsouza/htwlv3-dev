@@ -8,10 +8,11 @@
  *
  * Configuration:
  *
- * It's possible to reconfigure some parameters for the LoRa Chip by redefining them in the main file, check "=== Default Config ===" section in the `htlorav3.h` file.
+ * It's possible to configure some parameters by using the `setConfig()` and `updateConfig()` methods. For configuration of the LoRa Chip, check `htlorav3.h` file and for the WiFi Chip, check `htwifiv3.h` file.
  *
  * Depends On:
  * - htlorav3
+ * - htwifiv3
  * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
@@ -23,6 +24,7 @@
 // Declare the display and lora classes
 HTWLV3::HTWLV3()
 {
+  _config = getDefaultConfig();
   display = new Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, RST_OLED);
   lora = new HTLORAV3();
   wifi = new HTWIFIV3();
@@ -38,20 +40,134 @@ HTWLV3::~HTWLV3()
 
 void HTWLV3::begin()
 {
-  _initConfig();
+  _initializeBoard(true);
+}
 
-  // === Serial ===
-  if (_config->serialEnable)
+// === Getters ===
+
+HTWLV3Config HTWLV3::getConfig() const
+{
+  return _config;
+}
+
+HTWLV3Config HTWLV3::getDefaultConfig()
+{
+  HTWLV3Config defaultConfig;
+
+  defaultConfig.serialEnable = false;
+  defaultConfig.serialSpeed = 115200;
+  defaultConfig.displayEnable = false;
+  defaultConfig.loraEnable = false;
+  defaultConfig.wifiEnable = false;
+
+  return defaultConfig;
+}
+
+// === Setters ===
+
+void HTWLV3::setConfig(const HTWLV3Config &config)
+{
+  _config = config;
+}
+
+void HTWLV3::updateConfig(const HTWLV3Config &config)
+{
+  setConfig(config);
+
+  _initializeBoard();
+}
+
+// === Handlers ===
+
+void HTWLV3::process()
+{
+  if (lora)
+    lora->process();
+
+  if (wifi)
+    wifi->process();
+}
+
+// === Print Template implementations ===
+
+template <typename T>
+void HTWLV3::print(T value)
+{
+  if (Serial.availableForWrite())
+    Serial.print(value);
+
+  if (display)
   {
-    Serial.begin(_config->serialSpeed);
+    _checkDisplayScroll();
+    display->print(value);
+    display->display();
+  }
+}
+
+template <typename T>
+void HTWLV3::println(T value)
+{
+  if (Serial.availableForWrite())
+    Serial.println(value);
+
+  if (display)
+  {
+    _checkDisplayScroll();
+    display->println(value);
+    display->display();
+  }
+}
+
+void HTWLV3::println()
+{
+  println("");
+}
+
+void HTWLV3::print(const StringSumHelper &str)
+{
+  print(String(str));
+}
+
+void HTWLV3::println(const StringSumHelper &str)
+{
+  println(String(str));
+}
+
+void HTWLV3::print(char *str)
+{
+  print(String(str));
+}
+
+void HTWLV3::println(char *str)
+{
+  println(String(str));
+}
+
+// === Private Handlers ===
+
+void HTWLV3::_initializeBoard(bool force)
+{
+  // === Serial ===
+
+  Serial.end();
+  if (_config.serialEnable)
+  {
+    Serial.begin(_config.serialSpeed);
     Serial.flush();
     delay(50);
     Serial.println("Serial: initialized.");
   }
 
   // === Display ===
-  if (_config->displayEnable)
+
+  if (_config.displayEnable)
   {
+    if (!force && display != nullptr)
+      return;
+
+    if (display == nullptr)
+      display = new Adafruit_SSD1306(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, RST_OLED);
+
     // Display Reset via software
     pinMode(RST_OLED, OUTPUT);
     digitalWrite(RST_OLED, LOW);
@@ -75,136 +191,84 @@ void HTWLV3::begin()
 
     this->println("Display: initialized.");
   }
-  else
+  else if (display != nullptr)
   {
+    if (!force)
+    {
+      display->clearDisplay();
+      display->display();
+      Wire.end();
+    }
+
     delete display;
     display = nullptr;
   }
 
   // === LoRa ===
-  if (_config->loraEnable)
+
+  if (_config.loraEnable)
   {
+    if (!force && lora != nullptr)
+      return;
+
+    if (lora == nullptr)
+      lora = new HTLORAV3();
+
     lora->begin();
 
     this->println("LoRa: initialized.");
     this->print("Freq: ");
-    this->println(String(lora->getConfig()->frequency).c_str());
+    this->println(lora->getConfig().frequency);
   }
-  else
+  else if (lora != nullptr)
   {
     delete lora;
     lora = nullptr;
   }
 
   // === WiFi ===
-  if (_config->wifiEnable)
+
+  if (_config.wifiEnable)
   {
+    if (!force && wifi != nullptr)
+      return;
+
+    if (wifi == nullptr)
+      wifi = new HTWIFIV3();
+
     wifi->begin();
 
-    HTWIFIV3Config *config = wifi->getConfig();
+    this->println("WiFi: initialized.");
 
-    if (config->clientEnable)
+    HTWIFIV3Config config = wifi->getConfig();
+
+    if (config.clientEnable)
     {
       this->println("Client: initialized.");
     }
 
-    if (config->serverEnable)
+    if (config.serverEnable)
     {
       this->println("Server: initialized.");
       IPAddress ip = wifi->server->getIP();
       this->print("IP: ");
-      this->println(ip.toString().c_str());
+      this->println(ip.toString());
     }
   }
-  else
+  else if (wifi != nullptr)
   {
-
-    this->println("WiFi: DELETE");
     delete wifi;
     wifi = nullptr;
   };
 }
 
-// === Getters ===
-
-HTWLV3Config *HTWLV3::getConfig()
+void HTWLV3::_checkDisplayScroll()
 {
-  return _config;
-}
-
-// === Setters ===
-
-void HTWLV3::setConfig(HTWLV3Config *config)
-{
-  _config = new HTWLV3Config();
-
-  _config->serialEnable = config->serialEnable;
-  _config->serialSpeed = config->serialSpeed;
-  _config->displayEnable = config->displayEnable;
-  _config->loraEnable = config->loraEnable;
-  _config->wifiEnable = config->wifiEnable;
-}
-
-// === Handlers ===
-
-void HTWLV3::process()
-{
-  if (lora)
-    lora->process();
-
-  if (wifi)
-    wifi->process();
-}
-
-void HTWLV3::print(const char *str)
-{
-  if (Serial.availableForWrite())
-    Serial.print(str);
-
-  if (display)
+  if (display && display->getCursorY() >= 64)
   {
-    if (display->getCursorY() >= 64)
-    {
-      display->clearDisplay();
-      display->setCursor(0, 0);
-    }
-    display->print(str);
-    display->display();
+    display->clearDisplay();
+    display->setCursor(0, 0);
   }
-}
-
-void HTWLV3::println(const char *str)
-{
-  if (Serial.availableForWrite())
-    Serial.println(str);
-
-  if (display)
-  {
-    if (display->getCursorY() >= 64)
-    {
-      display->clearDisplay();
-      display->setCursor(0, 0);
-    }
-    display->println(str);
-    display->display();
-  }
-}
-
-// === Private Handlers ===
-
-void HTWLV3::_initConfig()
-{
-
-  if (_config != nullptr)
-    return;
-
-  _config = new HTWLV3Config();
-
-  _config->serialEnable = false;
-  _config->serialSpeed = 115200;
-  _config->displayEnable = false;
-  _config->loraEnable = false;
-  _config->wifiEnable = false;
 }
 
 HTWLV3 Board;

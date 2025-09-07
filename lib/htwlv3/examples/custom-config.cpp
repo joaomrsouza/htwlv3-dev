@@ -3,8 +3,7 @@
  * @brief Example to use custom config for the HelTec WiFi LoRa 32 V3 Board
  *
  * Depends On:
- * - htlorav3
- * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
+ * - htwlv3
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
  * https://github.com/joaomrsouza
@@ -36,75 +35,63 @@ void loop()
 // Custom config for multiple peripherals
 void config()
 {
+  // All the available default configs are commented and already set, change only what you need
+
   // === Board Config ===
 
-  HTWLV3Config boardConfig;
+  HTWLV3Config boardConfig = HTWLV3::getDefaultConfig();
 
-  boardConfig.serialEnable = true;
-  boardConfig.serialSpeed = 115200;
-  boardConfig.displayEnable = true;
-  boardConfig.loraEnable = false;
-  boardConfig.wifiEnable = false;
+  // boardConfig.serialEnable = false;
+  // boardConfig.serialSpeed = 115200;
+  // boardConfig.displayEnable = false;
+  boardConfig.loraEnable = true;
+  boardConfig.wifiEnable = true;
 
-  Board.setConfig(&boardConfig);
+  Board.setConfig(boardConfig);
 
   // === LoRa Config ===
 
-  // Make sure the LoRa is enabled before setting the config
-  if (boardConfig.loraEnable)
-  {
-    HTLORAV3Config loraConfig;
+  HTLORAV3Config loraConfig = HTLORAV3::getDefaultConfig();
 
-    loraConfig.frequency = 470E6;
-    loraConfig.bandwidth = 0;
-    loraConfig.spreadingFactor = 7;
-    loraConfig.codingRate = 1;
-    loraConfig.preambleLength = 8;
-    loraConfig.fixLengthPayloadOn = false;
-    loraConfig.iqInversionOn = false;
-    loraConfig.txOutPower = 5;
-    loraConfig.txTimeout = 3000;
-    loraConfig.rxTimeout = 0;
+  // loraConfig.frequency = 915E6;
+  // loraConfig.bandwidth = 0;
+  // loraConfig.spreadingFactor = 7;
+  // loraConfig.codingRate = 1;
+  // loraConfig.preambleLength = 8;
+  // loraConfig.fixLengthPayloadOn = false;
+  // loraConfig.iqInversionOn = false;
+  loraConfig.txOutPower = 12;
+  // loraConfig.txTimeout = 3000;
+  // loraConfig.rxTimeout = 0;
 
-    Board.lora->setConfig(&loraConfig);
-  }
+  Board.lora->setConfig(loraConfig);
 
   // === WiFi Config ===
 
-  // Make sure the WiFi is enabled before setting the config
-  if (boardConfig.wifiEnable)
-  {
-    HTWIFIV3Config wifiConfig;
+  HTWIFIV3Config wifiConfig = HTWIFIV3::getDefaultConfig();
 
-    wifiConfig.clientEnable = true;
-    wifiConfig.serverEnable = false;
+  wifiConfig.clientEnable = true;
+  // wifiConfig.serverEnable = false;
 
-    Board.wifi->setConfig(&wifiConfig);
+  Board.wifi->setConfig(wifiConfig);
 
-    // === Client Config ===
+  // === Client Config ===
 
-    // Make sure the client is enabled before setting the config
-    if (wifiConfig.clientEnable)
-    {
-      HTWIFIV3ClientConfig clientConfig;
+  HTWIFIV3ClientConfig clientConfig = HTWIFIV3Client::getDefaultConfig();
 
-      clientConfig.ssid = "YOUR_SSID";
-      clientConfig.password = "YOUR_PASSWORD";
+  clientConfig.ssid = "YOUR_SSID";
+  clientConfig.password = "YOUR_PASSWORD";
 
-      Board.wifi->client->setConfig(&clientConfig);
-    }
+  Board.wifi->client->setConfig(clientConfig);
 
-    // === Server Config ===
+  // You don't need to set a config if you don't want to use it
 
-    // Make sure the server is enabled before setting the config
-    if (wifiConfig.serverEnable)
-    {
-      HTWIFIV3ServerConfig serverConfig;
+  // === Server Config ===
 
-      serverConfig.ssid = "YOUR_SSID";
-      serverConfig.password = "YOUR_PASSWORD";
+  // HTWIFIV3ServerConfig serverConfig = HTWIFIV3Server::getDefaultConfig();
 
-      Board.wifi->server->setConfig(&serverConfig);
-    }
-  }
+  // serverConfig.ssid = "YOUR_SSID";
+  // serverConfig.password = "YOUR_PASSWORD";
+
+  // Board.wifi->server->setConfig(serverConfig);
 }

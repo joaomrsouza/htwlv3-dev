@@ -9,7 +9,6 @@
  *
  * Depends On:
  * - htlorav3
- * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
  * https://github.com/joaomrsouza
@@ -46,7 +45,7 @@ void setup()
 
   Serial.println("LoRa: initialized.");
   Serial.print("Freq: ");
-  Serial.println(lora.getConfig()->frequency);
+  Serial.println(lora.getConfig().frequency);
 
   // Set the callback functions for the LoRa library to receive and send packets
   lora.setOnReceive(onReceive);

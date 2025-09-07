@@ -8,7 +8,7 @@
  *
  * Configuration:
  *
- * It's possible to reconfigure some parameters for the WiFi Chip by redefining them in the main file, check "=== Default Config ===" section in the header file.
+ * It's possible to configure some parameters for the WiFi Chip by using the `setConfig()` and `updateConfig()` methods.
  *
  * Depends On:
  * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
@@ -23,72 +23,113 @@
 
 HTWIFIV3::HTWIFIV3()
 {
-  _config = nullptr;
+  _config = getDefaultConfig();
   client = new HTWIFIV3Client();
   server = new HTWIFIV3Server();
 }
 
 HTWIFIV3::~HTWIFIV3()
 {
-  delete _config;
+  stop();
   delete client;
   delete server;
 }
 
 void HTWIFIV3::begin()
 {
-  _initConfig();
+  _initializeWiFi(true);
+}
 
-  if (_config->clientEnable)
-    client->begin();
+void HTWIFIV3::stop()
+{
+  if (_config.clientEnable)
+    client->stop();
 
-  if (_config->serverEnable)
-    server->begin();
+  if (_config.serverEnable)
+    server->stop();
 }
 
 // Getters
 
-HTWIFIV3Config *HTWIFIV3::getConfig()
+HTWIFIV3Config HTWIFIV3::getConfig() const
 {
   return _config;
 }
 
+HTWIFIV3Config HTWIFIV3::getDefaultConfig()
+{
+  HTWIFIV3Config defaultConfig;
+
+  defaultConfig.clientEnable = false;
+  defaultConfig.serverEnable = false;
+
+  return defaultConfig;
+}
+
 // Setters
 
-void HTWIFIV3::setConfig(HTWIFIV3Config *config)
+void HTWIFIV3::setConfig(const HTWIFIV3Config &config)
 {
-  _config = new HTWIFIV3Config();
+  _config = config;
+}
 
-  _config->clientEnable = config->clientEnable;
-  _config->serverEnable = config->serverEnable;
+void HTWIFIV3::updateConfig(const HTWIFIV3Config &config)
+{
+  setConfig(config);
+
+  _initializeWiFi();
 }
 
 // Handlers
 
 void HTWIFIV3::process()
 {
-  if (_config->serverEnable)
+  if (_config.serverEnable)
     server->handleClient();
 }
 
 // Private Handlers
 
-void HTWIFIV3::_initConfig()
+void HTWIFIV3::_initializeWiFi(bool force)
 {
-  if (_config != nullptr)
-    return;
+  if (_config.clientEnable)
+  {
+    if (!force && client != nullptr)
+      return;
 
-  _config = new HTWIFIV3Config();
+    if (client == nullptr)
+      client = new HTWIFIV3Client();
 
-  _config->clientEnable = false;
-  _config->serverEnable = false;
+    client->begin();
+  }
+  else if (client != nullptr)
+  {
+    delete client;
+    client = nullptr;
+  }
+
+  if (_config.serverEnable)
+  {
+    if (!force && server != nullptr)
+      return;
+
+    if (server == nullptr)
+      server = new HTWIFIV3Server();
+
+    server->begin();
+  }
+  else if (server != nullptr)
+  {
+    delete server;
+    server = nullptr;
+  }
 }
 
 // === Client Class ===
 
 HTWIFIV3Client::HTWIFIV3Client()
 {
-  _config = nullptr;
+  _config = getDefaultConfig();
   _client = new WiFiClient();
   _clientSecure = new WiFiClientSecure();
   _http = new HTTPClient();
@@ -96,7 +137,7 @@ HTWIFIV3Client::HTWIFIV3Client()
 
 HTWIFIV3Client::~HTWIFIV3Client()
 {
-  delete _config;
+  stop();
   delete _client;
   delete _clientSecure;
   delete _http;
@@ -104,17 +145,29 @@ HTWIFIV3Client::~HTWIFIV3Client()
 
 void HTWIFIV3Client::begin()
 {
-  _initConfig();
+  _initializeWiFiClient();
+}
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(_config->ssid, _config->password);
+void HTWIFIV3Client::stop()
+{
+  WiFi.disconnect(true, true);
 }
 
 // Getters
 
-HTWIFIV3ClientConfig *HTWIFIV3Client::getConfig()
+HTWIFIV3ClientConfig HTWIFIV3Client::getConfig() const
 {
   return _config;
+}
+
+HTWIFIV3ClientConfig HTWIFIV3Client::getDefaultConfig()
+{
+  HTWIFIV3ClientConfig defaultConfig;
+
+  defaultConfig.ssid = "HTWIFIV3 Client";
+  defaultConfig.password = "12345678";
+
+  return defaultConfig;
 }
 
 bool HTWIFIV3Client::getIsConnected()
@@ -124,12 +177,18 @@ bool HTWIFIV3Client::getIsConnected()
 
 // Setters
 
-void HTWIFIV3Client::setConfig(HTWIFIV3ClientConfig *config)
+void HTWIFIV3Client::setConfig(const HTWIFIV3ClientConfig &config)
 {
-  _config = new HTWIFIV3ClientConfig();
+  _config = config;
+}
 
-  _config->ssid = config->ssid;
-  _config->password = config->password;
+void HTWIFIV3Client::updateConfig(const HTWIFIV3ClientConfig &config)
+{
+  stop();
+
+  setConfig(config);
+
+  _initializeWiFiClient();
 }
 
 void HTWIFIV3Client::setCACert(const char *caCert)
@@ -163,14 +222,10 @@ JsonDocument HTWIFIV3Client::post(String url, JsonDocument jsonData)
 
 // Private Handlers
 
-void HTWIFIV3Client::_initConfig()
+void HTWIFIV3Client::_initializeWiFiClient()
 {
-  if (_config != nullptr)
-    return;
-
-  _config = new HTWIFIV3ClientConfig();
-  _config->ssid = "HTWIFIV3 Client";
-  _config->password = "12345678";
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(_config.ssid, _config.password);
 }
 
 JsonDocument HTWIFIV3Client::_setupRequest(String url)
@@ -223,28 +278,42 @@ JsonDocument HTWIFIV3Client::_processRequest(JsonDocument response, int response
 
 // === Server Class ===
 
-HTWIFIV3Server::HTWIFIV3Server()
+HTWIFIV3Server::HTWIFIV3Server() : WebServer(80)
 {
-  _config = nullptr;
+  _config = getDefaultConfig();
 }
 
 HTWIFIV3Server::~HTWIFIV3Server()
 {
-  delete _config;
+  stop();
 }
 
 void HTWIFIV3Server::begin()
 {
-  _initConfig();
+  _initializeWiFiServer();
+}
 
-  WiFi.softAP(_config->ssid, _config->password);
+void HTWIFIV3Server::stop()
+{
+  WebServer::stop();
+  WiFi.softAPdisconnect(true);
 }
 
 // Getters
 
-HTWIFIV3ServerConfig *HTWIFIV3Server::getConfig()
+HTWIFIV3ServerConfig HTWIFIV3Server::getConfig() const
 {
   return _config;
+}
+
+HTWIFIV3ServerConfig HTWIFIV3Server::getDefaultConfig()
+{
+  HTWIFIV3ServerConfig defaultConfig;
+
+  defaultConfig.ssid = "HTWIFIV3 Server";
+  defaultConfig.password = "12345678";
+
+  return defaultConfig;
 }
 
 IPAddress HTWIFIV3Server::getIP()
@@ -254,22 +323,24 @@ IPAddress HTWIFIV3Server::getIP()
 
 // Setters
 
-void HTWIFIV3Server::setConfig(HTWIFIV3ServerConfig *config)
+void HTWIFIV3Server::setConfig(const HTWIFIV3ServerConfig &config)
 {
-  _config = new HTWIFIV3ServerConfig();
+  _config = config;
+}
 
-  _config->ssid = config->ssid;
-  _config->password = config->password;
+void HTWIFIV3Server::updateConfig(const HTWIFIV3ServerConfig &config)
+{
+  stop();
+
+  setConfig(config);
+
+  _initializeWiFiServer();
 }
 
 // Private Handlers
 
-void HTWIFIV3Server::_initConfig()
+void HTWIFIV3Server::_initializeWiFiServer()
 {
-  if (_config != nullptr)
-    return;
-
-  _config = new HTWIFIV3ServerConfig();
-  _config->ssid = "HTWIFIV3 Server";
-  _config->password = "12345678";
+  WiFi.softAP(_config.ssid, _config.password);
+  WebServer::begin();
 }

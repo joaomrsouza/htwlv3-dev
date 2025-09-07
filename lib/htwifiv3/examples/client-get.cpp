@@ -4,11 +4,9 @@
  *
  * Depends On:
  * - htwifiv3
- * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
  * https://github.com/joaomrsouza
- *
  */
 
 // Include the HelTec WiFi V3 library
@@ -62,7 +60,7 @@ void loop()
     Serial.println("Data received:");
     String data;
     serializeJson(response["data"], data);
-    Serial.println(data.c_str());
+    Serial.println(data);
   }
 
   delay(10000);
@@ -71,20 +69,17 @@ void loop()
 // Custom config function
 void config()
 {
-  HTWIFIV3Config config;
+  HTWIFIV3Config config = HTWIFIV3::getDefaultConfig();
+
   config.clientEnable = true;
-  config.serverEnable = false;
 
-  wifi.setConfig(&config);
+  wifi.setConfig(config);
 
-  // If the client is enabled, set the custom config
-  if (config.clientEnable)
-  {
-    HTWIFIV3ClientConfig clientConfig;
+  // Set the custom config
+  HTWIFIV3ClientConfig clientConfig = wifi.client->getDefaultConfig();
 
-    clientConfig.ssid = "YOUR_SSID";
-    clientConfig.password = "YOUR_PASSWORD";
+  clientConfig.ssid = "YOUR_SSID";
+  clientConfig.password = "YOUR_PASSWORD";
 
-    wifi.client->setConfig(&clientConfig);
-  }
+  wifi.client->setConfig(clientConfig);
 }

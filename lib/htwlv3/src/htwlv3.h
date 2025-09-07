@@ -8,10 +8,11 @@
  *
  * Configuration:
  *
- * It's possible to reconfigure some parameters for the LoRa Chip by redefining them in the main file, check "=== Default Config ===" section in the `htlorav3.h` file.
+ * It's possible to configure some parameters by using the `setConfig()` and `updateConfig()` methods. For configuration of the LoRa Chip, check `htlorav3.h` file and for the WiFi Chip, check `htwifiv3.h` file.
  *
  * Depends On:
  * - htlorav3
+ * - htwifiv3
  * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
@@ -48,7 +49,7 @@ typedef struct
 /**
  * @brief A class to use HelTec Board peripherals (HelTec WiFi LoRa 32 V3)
  *
- * This class provides an abstraction to use the HelTec WiFi LoRa 32 V3 Board peripherals such as the OLED Display and the LoRa Chip
+ * This class provides an abstraction to use the HelTec WiFi LoRa 32 V3 Board peripherals such as the OLED Display, the LoRa and WiFi Chips
  */
 class HTWLV3
 {
@@ -81,9 +82,16 @@ public:
   /**
    * @brief Get the current config object
    *
-   * @return HTWLV3Config*
+   * @return HTWLV3Config
    */
-  HTWLV3Config *getConfig();
+  HTWLV3Config getConfig() const;
+
+  /**
+   * @brief Get the default configuration object
+   *
+   * @return HTWLV3Config Default configuration with standard values
+   */
+  static HTWLV3Config getDefaultConfig();
 
   // === Setters ===
 
@@ -91,8 +99,23 @@ public:
    * @brief Set the config object
    *
    * @param config Config object
+   *
+   * @warning Do not use this to change the configuration after the Board peripherals are initialized, use `updateConfig()` instead
    */
-  void setConfig(HTWLV3Config *config);
+  void setConfig(const HTWLV3Config &config);
+
+  /**
+   * @brief Update configuration after the Board peripherals are initialized
+   *
+   * @warning Do not use this to change the configuration before the Board peripherals are initialized, use `setConfig()` instead
+   *
+   * @note Attention points:
+   * - This function will reinitialize the Board peripherals
+   * - Untouched peripherals will not be reinitialized
+   *
+   * @param config Config object
+   */
+  void updateConfig(const HTWLV3Config &config);
 
   // === Handlers ===
 
@@ -106,25 +129,39 @@ public:
   /**
    * @brief Print on all enabled outputs (display, Serial)
    */
-  void print(const char *str);
+  template <typename T>
+  void print(T value);
+
+  void print(char *str);
+  void print(const StringSumHelper &str);
 
   /**
    * @brief Println on all enabled outputs (display, Serial)
    */
-  void println(const char *str);
+  template <typename T>
+  void println(T value);
+
+  void println(char *str);
+  void println(const StringSumHelper &str);
+  void println(); // Blank line
 
 private:
   /**
    * @brief Config object
    */
-  HTWLV3Config *_config;
+  HTWLV3Config _config;
 
   // === Private Handlers ===
 
   /**
-   * @brief Initialize the config object
+   * @brief Initialize the Board peripherals
    */
-  void _initConfig();
+  void _initializeBoard(bool force = false);
+
+  /**
+   * @brief Helper function to manage display scrolling
+   */
+  void _checkDisplayScroll();
 };
 
 extern HTWLV3 Board;

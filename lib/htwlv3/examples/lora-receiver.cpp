@@ -8,8 +8,7 @@
  * It listens for incoming messages and prints them to the serial monitor and displays them on the OLED screen.
  *
  * Depends On:
- * - htlorav3
- * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
+ * - htwlv3
  *
  * @author @joaomrsouza (João Marcos Rocha Souza)
  * https://github.com/joaomrsouza
@@ -58,22 +57,20 @@ void onReceive(LoraDataPacket packet)
   Board.println("Received Data:");
   Board.println(packet.data);
   Board.print("Size: ");
-  Board.println(String(packet.size).c_str());
+  Board.println(packet.size);
   Board.print("RSSI: ");
-  Board.println(String(packet.rssi).c_str());
+  Board.println(packet.rssi);
   Board.print("SNR: ");
-  Board.println(String(packet.snr).c_str());
+  Board.println(packet.snr);
 }
 
 void config()
 {
-  HTWLV3Config boardConfig;
+  HTWLV3Config boardConfig = HTWLV3::getDefaultConfig();
 
   boardConfig.serialEnable = true;
-  boardConfig.serialSpeed = 115200;
   boardConfig.displayEnable = true;
   boardConfig.loraEnable = true;
-  boardConfig.wifiEnable = false;
 
-  Board.setConfig(&boardConfig);
+  Board.setConfig(boardConfig);
 }

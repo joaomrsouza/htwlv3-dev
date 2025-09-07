@@ -8,7 +8,7 @@
  *
  * Configuration:
  *
- * It's possible to reconfigure some parameters by redefining them in the main file, check "=== Default Config ===" section bellow.
+ * It's possible to configure some parameters by using the `setConfig()` and `updateConfig()` methods.
  *
  * Depends On:
  * - heltecautomation/Heltec ESP32 Dev-Boards@2.0.2
@@ -23,7 +23,8 @@
 
 // LoRa Libs
 #include <SPI.h>
-#include "LoRaWan_APP.h"
+#include "radio/radio.h"
+#include "ESP32_Mcu.h"
 
 // === Structs ===
 
@@ -85,6 +86,11 @@ public:
    */
   void begin();
 
+  /**
+   * @brief Stop the LoRa Chip
+   */
+  void stop();
+
   // === Getters ===
 
   /**
@@ -92,7 +98,7 @@ public:
    *
    * @return HTLORAV3Config*
    */
-  HTLORAV3Config *getConfig();
+  HTLORAV3Config getConfig() const;
 
   /**
    * @brief Get the Idle state of LoRa Chip
@@ -101,14 +107,36 @@ public:
    */
   bool getIdle();
 
+  /**
+   * @brief Get the default configuration object
+   *
+   * @return HTLORAV3Config Default configuration with standard values
+   */
+  static HTLORAV3Config getDefaultConfig();
+
   // === Setters ===
 
   /**
    * @brief Set the config object
    *
    * @param config Config object
+   *
+   * @warning Do not use this to change the configuration after the LoRa is initialized, use `updateConfig()` instead
    */
-  void setConfig(HTLORAV3Config *config);
+  void setConfig(const HTLORAV3Config &config);
+
+  /**
+   * @brief Update configuration after the LoRa is initialized
+   *
+   * @param config Config object
+   *
+   * @warning Do not use this to change the configuration before the LoRa is initialized, use `setConfig()` instead
+   *
+   * @note Attention points:
+   * - This function will put the LoRa in sleep mode and idle state
+   * - The LoRa should be initialized again after the configuration is updated
+   */
+  void updateConfig(const HTLORAV3Config &config);
 
   /**
    * @brief Set the onReceive function called when a packet is received
@@ -176,7 +204,7 @@ private:
   /**
    * @brief Config object
    */
-  HTLORAV3Config *_config;
+  HTLORAV3Config _config;
 
   /**
    * @brief RadioEvents struct for setup Radio Lib
@@ -191,9 +219,9 @@ private:
   // === Private Handlers ===
 
   /**
-   * @brief Initialize the config object
+   * @brief Initialize the radio
    */
-  void _initConfig();
+  void _initializeLora();
 
   /**
    * @brief Function to be called when a packet is received
