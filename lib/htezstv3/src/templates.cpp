@@ -269,7 +269,7 @@ String EZSettings::detail::getSettingsTemplate()
           </div>
           <div class="group">
             <label for="lora-preamble-length">
-              Preamble Length (current: {VALUE_LORA_PREAMBLE_LENGTH})
+              Preamble Length (current: {LABEL_LORA_PREAMBLE_LENGTH})
             </label>
             <select
               id="lora-preamble-length"
@@ -335,6 +335,16 @@ String EZSettings::detail::getSettingsTemplate()
               <option {SELECTED_LORA_TX_OUT_POWER-18} value="18">18</option>
               <option {SELECTED_LORA_TX_OUT_POWER-19} value="19">19</option>
               <option {SELECTED_LORA_TX_OUT_POWER-20} value="20">20</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-21} value="21">21</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-22} value="22">22</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-23} value="23">23</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-24} value="24">24</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-25} value="25">25</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-26} value="26">26</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-27} value="27">27</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-28} value="28">28</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-29} value="29">29</option>
+              <option {SELECTED_LORA_TX_OUT_POWER-30} value="30">30</option>
             </select>
           </div>
           <div class="group">

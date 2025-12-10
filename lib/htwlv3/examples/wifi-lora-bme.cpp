@@ -57,7 +57,7 @@ TaskHandle_t xTaskHandleLoraControl = NULL;
 
 // Declare the queue handles
 QueueHandle_t xQueueHandleSendToServer = NULL;
-QueueHandle_t xQueueHandleSendToLora = NULL;
+QueueHandle_t xQueueHandleSendWithLora = NULL;
 
 // Declare the task functions
 void vTaskReadTemperature(void *pvParams);
@@ -103,7 +103,7 @@ void setup()
 
   // Initialize the queues
   xQueueHandleSendToServer = xQueueCreate(10, sizeof(SensorData));
-  xQueueHandleSendToLora = xQueueCreate(10, sizeof(SensorData));
+  xQueueHandleSendWithLora = xQueueCreate(10, sizeof(SensorData));
 
   // Create the tasks
   xTaskCreatePinnedToCore(vTaskReadTemperature, "Read Temperature Task: ", configMINIMAL_STACK_SIZE + 1024, NULL, 1, &xTaskHandleReadTemperature, 0);
@@ -135,7 +135,7 @@ void vTaskReadTemperature(void *pvParams)
     if (Board.wifi->client->getIsConnected())
       xQueueSend(xQueueHandleSendToServer, &data, portMAX_DELAY);
     else
-      xQueueSend(xQueueHandleSendToLora, &data, portMAX_DELAY);
+      xQueueSend(xQueueHandleSendWithLora, &data, portMAX_DELAY);
 
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
@@ -222,7 +222,7 @@ void vTaskLoraControl(void *pvParams)
     {
       JsonArray lastDataArray = lastDataDocument.to<JsonArray>();
 
-      while (xQueueReceive(xQueueHandleSendToLora, &lastData, 0) == pdTRUE)
+      while (xQueueReceive(xQueueHandleSendWithLora, &lastData, 0) == pdTRUE)
       {
         // Convert the data to JSON
         JsonDocument dataToSend = dataToJson(lastData);
@@ -293,7 +293,7 @@ void cLoraOnReceive(LoraDataPacket packet)
     if (Board.wifi->client->getIsConnected())
       xQueueSend(xQueueHandleSendToServer, &data, portMAX_DELAY);
     else
-      xQueueSend(xQueueHandleSendToLora, &data, portMAX_DELAY);
+      xQueueSend(xQueueHandleSendWithLora, &data, portMAX_DELAY);
   }
 
   // Notify the LoRa Control Task to go back to the check state

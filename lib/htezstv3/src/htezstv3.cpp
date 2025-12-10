@@ -128,7 +128,7 @@ void EZSettings::detail::handleRoot()
   page = replaceAll(page, "{CHECKED_LORA_IQ_INVERSION}", loraConfig.iqInversionOn ? "checked" : "");
 
   page = replaceAll(page, "{LABEL_LORA_TX_OUT_POWER}", String(loraConfig.txOutPower));
-  for (int i = 0; i <= 20; i++)
+  for (int i = 0; i <= 30; i++)
     page = replaceAll(page, "{SELECTED_LORA_TX_OUT_POWER-" + String(i) + "}", loraConfig.txOutPower == i ? "selected" : "");
 
   page = replaceAll(page, "{VALUE_LORA_TX_TIMEOUT}", String(loraConfig.txTimeout));

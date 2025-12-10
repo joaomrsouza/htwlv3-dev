@@ -74,8 +74,10 @@ public:
 
   /**
    * @brief Initialize the Board peripherals
+   *
+   * @param loraAddress LoRa node address [1-999, Default to 0: for anonymous mode]
    */
-  void begin();
+  void begin(unsigned int loraAddress = 0);
 
   // === Getters ===
 
@@ -133,6 +135,7 @@ public:
   void print(T value);
 
   void print(char *str);
+  void print(const char *str);
   void print(const StringSumHelper &str);
 
   /**
@@ -142,10 +145,16 @@ public:
   void println(T value);
 
   void println(char *str);
+  void println(const char *str);
   void println(const StringSumHelper &str);
   void println(); // Blank line
 
 private:
+  /**
+   * @brief LoRa node address [1-999, Default to 0: for anonymous mode]
+   */
+  unsigned int _loraAddress;
+
   /**
    * @brief Config object
    */

@@ -1,0 +1,169 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Monitor ESP1",
+      "type": "shell",
+      "command": "platformio",
+      "args": ["device", "monitor", "-e", "esp1"],
+      "presentation": { "panel": "dedicated" },
+      "icon": { "id": "debug", "color": "terminal.ansiYellow" }
+    },
+    {
+      "label": "Monitor ESP2",
+      "type": "shell",
+      "command": "platformio",
+      "args": ["device", "monitor", "-e", "esp2"],
+      "presentation": { "panel": "dedicated" },
+      "icon": { "id": "debug", "color": "terminal.ansiYellow" }
+    },
+    {
+      "label": "Monitor ESP3",
+      "type": "shell",
+      "command": "platformio",
+      "args": ["device", "monitor", "-e", "esp3"],
+      "presentation": { "panel": "dedicated" },
+      "icon": { "id": "debug", "color": "terminal.ansiYellow" }
+    },
+    {
+      "label": "Monitor ESP1 e ESP2",
+      "dependsOn": ["Monitor ESP1", "Monitor ESP2"],
+      "dependsOrder": "parallel",
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "test", "isDefault": false },
+      "icon": { "id": "debug", "color": "terminal.ansiYellow" }
+    },
+    {
+      "label": "Monitor ESP1, ESP2 e ESP3",
+      "dependsOn": ["Monitor ESP1", "Monitor ESP2", "Monitor ESP3"],
+      "dependsOrder": "parallel",
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "test", "isDefault": false },
+      "icon": { "id": "debug", "color": "terminal.ansiYellow" }
+    },
+    // {
+    //   "label": "Concurrent Monitor ESPs",
+    //   "type": "shell",
+    //   "command": ".\\concurrently.ps1",
+    //   "presentation": {
+    //     "panel": "dedicated",
+    //     "echo": true,
+    //     "reveal": "always"
+    //   },
+    //   "group": { "kind": "test", "isDefault": false },
+    //   "icon": { "id": "debug", "color": "terminal.ansiYellow" }
+    // },
+    {
+      "label": "Kill Monitors",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "taskkill /f /im platformio.exe 2>$null; if ($LASTEXITCODE -ne 0) { Write-Host 'No monitors to kill' }"
+      ],
+      "presentation": { "panel": "shared", "reveal": "silent" },
+      "icon": { "id": "debug-stop", "color": "terminal.ansiRed" }
+    },
+    {
+      "label": "Restart Monitor 2 ESPs",
+      "dependsOn": ["Kill Monitors", "Monitor ESP1 e ESP2"],
+      "dependsOrder": "sequence",
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "test", "isDefault": false }
+    },
+    {
+      "label": "Restart Monitor 3 ESPs",
+      "dependsOn": ["Kill Monitors", "Monitor ESP1, ESP2 e ESP3"],
+      "dependsOrder": "sequence",
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "Upload ESP1",
+      "dependsOn": ["Kill Monitors"],
+      "type": "shell",
+      "command": "platformio",
+      "args": ["run", "--target", "upload", "-e", "esp1"],
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "build", "isDefault": false },
+      "icon": { "id": "arrow-circle-up", "color": "terminal.ansiMagenta" }
+    },
+    {
+      "label": "Upload ESP2",
+      "dependsOn": ["Kill Monitors"],
+      "type": "shell",
+      "command": "platformio",
+      "args": ["run", "--target", "upload", "-e", "esp2"],
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "build", "isDefault": false },
+      "icon": { "id": "arrow-circle-up", "color": "terminal.ansiMagenta" }
+    },
+    {
+      "label": "Upload ESP3",
+      "dependsOn": ["Kill Monitors"],
+      "type": "shell",
+      "command": "platformio",
+      "args": ["run", "--target", "upload", "-e", "esp3"],
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "build", "isDefault": false },
+      "icon": { "id": "arrow-circle-up", "color": "terminal.ansiMagenta" }
+    },
+    {
+      "label": "Upload ESP1 e ESP2",
+      "dependsOn": ["Upload ESP1", "Upload ESP2"],
+      "dependsOrder": "parallel",
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "build", "isDefault": false },
+      "icon": { "id": "arrow-circle-up", "color": "terminal.ansiMagenta" }
+    },
+    {
+      "label": "Upload ESP1, ESP2 e ESP3",
+      "dependsOn": ["Upload ESP1", "Upload ESP2", "Upload ESP3"],
+      "dependsOrder": "parallel",
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "build", "isDefault": false },
+      "icon": { "id": "arrow-circle-up", "color": "terminal.ansiMagenta" }
+    },
+    {
+      "label": "Build and Monitor 2 ESPs",
+      "dependsOn": ["Upload ESP1 e ESP2", "Monitor ESP1 e ESP2"],
+      "dependsOrder": "sequence",
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "build", "isDefault": false }
+    },
+    {
+      "label": "Build and Monitor 3 ESPs",
+      "dependsOn": ["Upload ESP1, ESP2 e ESP3", "Monitor ESP1, ESP2 e ESP3"],
+      "dependsOrder": "sequence",
+      "presentation": { "panel": "dedicated" },
+      "group": { "kind": "build", "isDefault": true }
+    }
+    // {
+    //   "label": "Upload & Monitor ESP1",
+    //   "type": "shell",
+    //   "command": "platformio run --target upload -e esp1 && clear && platformio device monitor -e esp1",
+    //   "group": { "isDefault": false, "kind": "build" },
+    //   "icon": { "id": "debug", "color": "terminal.ansiCyan" }
+    //   // "presentation": { "panel": "shared", "clear": true },
+    //   // "runOptions": { "instancePolicy": "terminateNewest", "instanceLimit": 1 }
+    // },
+    // {
+    //   "label": "Upload & Monitor ESP2",
+    //   "type": "shell",
+    //   "command": "platformio run --target upload -e esp2 && clear && platformio device monitor -e esp2",
+    //   "group": { "isDefault": false, "kind": "build" },
+    //   "icon": { "id": "debug", "color": "terminal.ansiCyan" }
+    //   // "presentation": { "panel": "shared", "clear": true }
+    //   // "runOptions": { "instancePolicy": "terminateNewest", "instanceLimit": 1 }
+    // },
+    // {
+    //   "label": "Upload & Monitor ESP1 e ESP2",
+    //   "dependsOn": ["Upload & Monitor ESP1", "Upload & Monitor ESP2"],
+    //   "dependsOrder": "parallel",
+    //   "group": { "isDefault": true, "kind": "test" },
+    //   "icon": { "id": "debug", "color": "terminal.ansiCyan" }
+    //   // "presentation": { "panel": "shared", "clear": true }
+    //   // "runOptions": { "instancePolicy": "terminateNewest", "instanceLimit": 1 }
+    // }
+  ]
+}

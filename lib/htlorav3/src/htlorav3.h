@@ -47,7 +47,7 @@ typedef struct
   bool fixLengthPayloadOn;
   // IQ Inversion On
   bool iqInversionOn;
-  // Output Power - dBm
+  // Output Power - dBm - [-3..22]
   int txOutPower;
   // TX Timeout - ms
   int txTimeout;
@@ -62,6 +62,12 @@ typedef struct
   uint16_t size;
   int8_t snr;
 } LoraDataPacket;
+
+typedef struct
+{
+  unsigned int nodeAddress;
+  unsigned int packetId;
+} ReceivedPacketInfo;
 
 /**
  * @class HTLORAV3
@@ -79,12 +85,21 @@ public:
   HTLORAV3();
   ~HTLORAV3();
 
+  enum LoRaStates
+  {
+    IDLE,           // 0
+    SENDING,        // 1
+    SEND_TIMEOUT,   // 2
+    RECEIVING,      // 3
+    RECEIVE_TIMEOUT // 4
+  };
+
   /**
    * @brief Setup the configured constants and binding methods
    *
-   * @param FREQ Frequency of work for the LoRa Chip
+   * @param address LoRa node address [1-999, Default to 0: for anonymous mode]
    */
-  void begin();
+  void begin(unsigned int address = 0);
 
   /**
    * @brief Stop the LoRa Chip
@@ -101,11 +116,11 @@ public:
   HTLORAV3Config getConfig() const;
 
   /**
-   * @brief Get the Idle state of LoRa Chip
+   * @brief Get the state of LoRa Chip
    *
-   * @return bool
+   * @return LoRaStates
    */
-  bool getIdle();
+  LoRaStates getState();
 
   /**
    * @brief Get the default configuration object
@@ -186,21 +201,90 @@ public:
    * @brief Send data packets
    *
    * @param data Data string to be sent
+   * @param destinationAddress Destination node address (0 for broadcast)
    * @return int [0: ok, 1: busy]
    */
-  int sendPacket(const char *data);
+  int sendPacket(const char *data, unsigned int destinationAddress = 0);
+
+  /**
+   * @brief Send data packets and wait for ACK
+   *
+   * @warning You should set an lora address at the `begin()` function to use this.
+   *
+   * @param data Data string to be sent
+   * @param destinationAddress Destination node address (broadcast not allowed)
+   * @return int [0: ok, 1: busy]
+   */
+  int sendReliablePacket(const char *data, unsigned int destinationAddress);
 
   /**
    * @brief Start listening for packets
    *
    * @note Use this to listen for incoming packets
    * @note Call `setOnReceive()` to process the received packets
+   * @note Call `setOnReceiveTimeout()` to use listen timeout
    *
    * @param timeout Timeout for the listening in ms [0: continuous, any number]
+   * @return int [0: ok, 1: busy]
    */
-  void listenToPacket(uint32_t timeout = 0);
+  int listenToPacket(uint32_t timeout = 0);
 
 private:
+  /**
+   * @brief LoRa node address [1-999, Default to 0: for anonymous mode]
+   */
+  static unsigned int _address;
+
+  /**
+   * @brief Controls when the library is using callbacks internaly before call user callbacks
+   */
+  static bool _internalCallbacks;
+
+  /**
+   * @brief Address to send ACK to [1-999, Default to 0: for no ACK]
+   */
+  static unsigned int _sendACKTo;
+
+  /**
+   * @brief Current set receive timeout
+   */
+  static unsigned long _receiveTimeoutMillis;
+
+  /**
+   * @brief Millis timestamp for receive timeout
+   */
+  static unsigned long _receiveTimeoutTimestamp;
+
+  /**
+   * @brief Current packet id [1-99, Default to 0: for none sent yet]
+   */
+  static int _currentPacketId;
+
+  /**
+   * @brief Flag that controls when a packet should be ignored (eg: duplicated packet)
+   */
+  static bool _ignorePacket;
+
+  /**
+   * @brief Last packet received
+   */
+  static LoraDataPacket _lastPacket;
+
+  /**
+   * @brief Store the last 10 node address and packet id of the received packets (circular buffer)
+   */
+  static ReceivedPacketInfo _receivedPacketsList[10];
+
+  /**
+   * @brief Current index in the `_receivedPacketsList` circular buffer
+   */
+  static int _receivedPacketsIndex;
+
+  /**
+   * @brief Number of packets stored in the `_receivedPacketsList` list (0-10)
+   */
+  static int _receivedPacketsCount;
+
   /**
    * @brief Config object
    */
@@ -214,7 +298,7 @@ private:
   /**
    * @brief LoRa Chip state
    */
-  static bool _idle;
+  static LoRaStates _state;
 
   // === Private Handlers ===
 
@@ -222,6 +306,32 @@ private:
    * @brief Initialize the radio
    */
   void _initializeLora();
+
+  /**
+   * @brief Internal version of `sendPacket` that don't return busy when `_internalCallbacks` is enable
+   *
+   * @param data Data string to be sent
+   * @param destinationAddress Destination node address (0 for broadcast)
+   * @return int [0: ok, 1: busy]
+   */
+  int _sendPacket(const char *data, unsigned int destinationAddress = 0);
+
+  /**
+   * @brief Internal version of `sendReliablePacket` that don't return busy when `_internalCallbacks` is enable
+   *
+   * @param data Data string to be sent
+   * @param destinationAddress Destination node address (broadcast not allowed)
+   * @return int [0: ok, 1: busy]
+   */
+  int _sendReliablePacket(const char *data, unsigned int destinationAddress);
+
+  /**
+   * @brief Internal version of `listenToPacket` that don't return busy when `_internalCallbacks` is enable
+   *
+   * @param timeout Timeout for the listening in ms [0: continuous, any number]
+   * @return int [0: ok, 1: busy]
+   */
+  int _listenToPacket(uint32_t timeout = 0);
 
   /**
    * @brief Function to be called when a packet is received
@@ -279,6 +389,15 @@ private:
    * @brief Internal function to be called when `listenToPacket()` timeout
    */
   static void _onRxTimeout();
+
+  /**
+   * @brief Check if a packet with the given node address and packet ID is in the buffer
+   *
+   * @param nodeAddress Address of the node to check
+   * @param packetId Id of the packet to check
+   * @return bool True if the packet is found in the buffer, false otherwise
+   */
+  static bool _isPacketInBuffer(unsigned int nodeAddress, unsigned int packetId);
 };
 
 /**

@@ -1,11 +1,14 @@
 {
   "files.associations": {
+    "*.dbclient-js": "javascript",
     "*.ejs": "html",
     "*.geojson": "json",
     "*.html": "html",
     "*.jsx": "javascriptreact",
     "*/requirements{/**,*}.{txt,in}": "pip-requirements",
     ".pleeeaserc": "json",
+    "*.log": "ansi",
+    "*.pde": "cpp",
     "array": "cpp",
     "*.tcc": "cpp",
     "deque": "cpp",
@@ -67,6 +70,11 @@
     "sx126x-board.h": "c",
     "timer.h": "c",
     "sx126x.h": "c",
-    "radio.h": "c"
+    "radio.h": "c",
+    "gpio.h": "c",
+    "gpio-board.h": "c",
+    "lorawan_spi.h": "c",
+    "task.h": "c",
+    "freertos.h": "c"
   }
 }

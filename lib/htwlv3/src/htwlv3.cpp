@@ -38,8 +38,9 @@ HTWLV3::~HTWLV3()
   delete wifi;
 }
 
-void HTWLV3::begin()
+void HTWLV3::begin(unsigned int loraAddress)
 {
+  _loraAddress = loraAddress;
   _initializeBoard(true);
 }
 
@@ -108,7 +109,8 @@ template <typename T>
 void HTWLV3::println(T value)
 {
   if (Serial.availableForWrite())
-    Serial.println(value);
+    Serial.println(String(value));
+  // Serial.println("[" + String(millis()) + "] > " + String(value));
 
   if (display)
   {
@@ -143,10 +145,23 @@ void HTWLV3::println(char *str)
   println(String(str));
 }
 
+void HTWLV3::print(const char *str)
+{
+  print(String(str));
+}
+
+void HTWLV3::println(const char *str)
+{
+  println(String(str));
+}
+
 // === Private Handlers ===
 
 void HTWLV3::_initializeBoard(bool force)
 {
+  pinMode(Vext, OUTPUT);
+  digitalWrite(Vext, LOW);
+
   // === Serial ===
 
   Serial.end();
@@ -214,11 +229,10 @@ void HTWLV3::_initializeBoard(bool force)
     if (lora == nullptr)
       lora = new HTLORAV3();
 
-    lora->begin();
+    lora->begin(_loraAddress);
 
     this->println("LoRa: initialized.");
-    this->print("Freq: ");
-    this->println(lora->getConfig().frequency);
+    this->println("Freq: " + String(lora->getConfig().frequency));
   }
   else if (lora != nullptr)
   {
@@ -251,8 +265,7 @@ void HTWLV3::_initializeBoard(bool force)
     {
       this->println("Server: initialized.");
       IPAddress ip = wifi->server->getIP();
-      this->print("IP: ");
-      this->println(ip.toString());
+      this->println("IP: " + ip.toString());
     }
   }
   else if (wifi != nullptr)
