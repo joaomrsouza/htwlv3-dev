@@ -154,13 +154,20 @@ void config()
 
   Board.setConfig(boardConfig);
 
-  // HTLORAV3Config loraConfig = HTLORAV3::getDefaultConfig();
+  HTLORAV3Config loraConfig = HTLORAV3::getDefaultConfig();
 
-  // loraConfig.spreadingFactor = 12;
-  // loraConfig.txOutPower = 24; // Limits: -3 -> 22
-  // loraConfig.codingRate = 4;
+  loraConfig.frequency = 433E6;
+  loraConfig.bandwidth = 0;
+  loraConfig.spreadingFactor = 7;
+  loraConfig.codingRate = 1;
+  loraConfig.preambleLength = 8;
+  loraConfig.fixLengthPayloadOn = false;
+  loraConfig.iqInversionOn = false;
+  loraConfig.txOutPower = 22;
+  loraConfig.txTimeout = 3000;
+  loraConfig.rxTimeout = 0;
 
-  // Board.lora->setConfig(loraConfig);
+  Board.lora->setConfig(loraConfig);
 
   HTWIFIV3Config wifiConfig = HTWIFIV3::getDefaultConfig();
 
