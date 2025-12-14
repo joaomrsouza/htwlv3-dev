@@ -135,7 +135,7 @@ HTLORAV3Config HTLORAV3::getDefaultConfig()
   defaultConfig.preambleLength = 8;
   defaultConfig.fixLengthPayloadOn = false;
   defaultConfig.iqInversionOn = false;
-  defaultConfig.txOutPower = 24;
+  defaultConfig.txOutPower = 22;
   defaultConfig.txTimeout = 3000;
   defaultConfig.rxTimeout = 0;
 
