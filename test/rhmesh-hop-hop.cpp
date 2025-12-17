@@ -1,9 +1,3 @@
-// TODO: extract data from sensor and send time to time via lora with hop by hop accumulation
-
-// Vou ter uma fila de leituras que dado um certo timeout, vai ser enviado via lora
-// Se um pacote chegar antes do timeout, os dados são acumulados e enviados junto com o pacote para o próximo hop
-// Se não houver pacote quando os dados chegarem, simplesmente repasse o pacote para o próximo hop
-
 #include "htwlv3.h"
 
 #include <SPI.h>
@@ -98,7 +92,7 @@ void vTaskLoraControl(void *pvParams)
   {
     if (state == LORA_CHECK)
     {
-      if (uxQueueMessagesWaiting(xQueueHandleSendWithLora) > 0) //  || (!bmeAvailable && uxQueueMessagesWaiting(xQueueHandleReceivedFromLora) > 0)
+      if (uxQueueMessagesWaiting(xQueueHandleSendWithLora) > 0)
         state = LORA_SEND;
       else
         state = LORA_RECEIVE;
@@ -186,8 +180,6 @@ void vTaskLoraControl(void *pvParams)
       }
       state = LORA_CHECK;
     }
-
-    // vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
 
@@ -215,7 +207,7 @@ void setup()
   Board.println("SETUP: LoRa init!");
 
   driver.setFrequency(433.2, true);
-  driver.setTxPower(-22);
+  driver.setTxPower(-17); // Parâmetro alterado para diminuir o alcance de forma proposital
 
   if (!manager.init())
   {
@@ -230,11 +222,8 @@ void setup()
   xQueueHandleSendWithLora = xQueueCreate(10, sizeof(SensorData));
   xQueueHandleReceivedFromLora = xQueueCreate(10, sizeof(char) * RH_SX126x_MAX_MESSAGE_LEN);
 
-  // if (bmeAvailable)
-  // {
-  xTaskCreatePinnedToCore(vTaskReadTemperature, "Read Temperature Task: ", configMINIMAL_STACK_SIZE + 1024, NULL, 1, &xTaskHandleReadTemperature, 0);
-  // }
-  xTaskCreatePinnedToCore(vTaskLoraControl, "Lora Control Task: ", configMINIMAL_STACK_SIZE + (1024 * 4), NULL, 1, &xTaskHandleLoraControl, 1);
+  xTaskCreate(vTaskReadTemperature, "Read Temperature Task: ", configMINIMAL_STACK_SIZE + 1024, NULL, 1, &xTaskHandleReadTemperature);
+  xTaskCreate(vTaskLoraControl, "Lora Control Task: ", configMINIMAL_STACK_SIZE + (1024 * 4), NULL, 1, &xTaskHandleLoraControl);
 }
 
 void loop()

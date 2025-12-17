@@ -13,10 +13,6 @@
 #define NODE_ID 250
 #endif
 
-#ifndef ORIGIN
-#define ORIGIN "ESP-X"
-#endif
-
 #define RADIO_DIO_1 14
 #define RADIO_NSS 8
 #define RADIO_RESET 12
@@ -74,9 +70,10 @@ uint16_t getSendAddr()
   return directSend ? (LOCAL_ADDR == DEST_ADDR ? NULL : DEST_ADDR) : (LOCAL_ADDR == 0x5CEC ? 0xD510 : (LOCAL_ADDR == 0xD510 ? DEST_ADDR : NULL));
 }
 
+// Delay aleatorizado para amenizar colisão de pacotes
 int getDelay(int baseDelay)
 {
-  return baseDelay + NODE_DELAY + random(0, baseDelay / 2); // random(300, 1500)
+  return baseDelay + NODE_DELAY + random(0, baseDelay / 2);
 }
 
 void clearDisplay()
@@ -104,11 +101,11 @@ void initRadio()
   config.loraRst = RADIO_RESET; // LoRa reset pin
   config.loraIo1 = RADIO_BUSY;  // LoRa DIO1 pin
   config.module = LoraMesher::SX1262_MOD;
-  config.freq = 433.000F;
-  config.power = 22;
-  // config.freq = 915.000F;
-  // config.sf = 8;
-  // config.power = 2;
+
+  // Parâmetros alterados para diminuir o alcance de forma proposital
+  config.freq = 915.000F;
+  config.sf = 8;
+  config.power = 2;
 
   radio.begin(config);
 }
@@ -174,7 +171,7 @@ void vTaskButton(void *pvParams)
     else if (pressTimes == 1) // Short press
     {
       if (autoMode)
-        Board.println(String(ORIGIN) + " - " + String(LOCAL_ADDR, HEX));
+        Board.println(String(NODE_ID) + " - " + String(LOCAL_ADDR, HEX));
       else
       {
         Board.println("BME: Manual read requested");
@@ -185,7 +182,7 @@ void vTaskButton(void *pvParams)
     {
       directSend = !directSend;
       Board.println("Direct send " + String(directSend ? "enabled" : "disabled"));
-      Board.println(String(ORIGIN) + " - " + String(LOCAL_ADDR, HEX) + " -> " + String(getSendAddr(), HEX));
+      Board.println(String(NODE_ID) + " - " + String(LOCAL_ADDR, HEX) + " -> " + String(getSendAddr(), HEX));
     }
     vTaskDelay(pdMS_TO_TICKS(100));
   }
@@ -222,35 +219,10 @@ void vTaskReadTemperature(void *pvParams)
     data.timestamp = millis();
     data.index = packetIndex++;
 
-    // Board.println("BME: Read " + String(data.temperature) + " °C");
-
     xQueueSend(xQueueHandleSendWithLora, &data, portMAX_DELAY);
 
     vTaskDelay(pdMS_TO_TICKS(getDelay(SENSOR_READ_INTERVAL)));
   }
-}
-
-void debugPrintRoutingTable()
-{
-  // Set the routing table list that is being used and cannot be accessed (Remember to release use after usage)
-  LM_LinkedList<RouteNode> *routingTableList = radio.routingTableListCopy();
-
-  routingTableList->setInUse();
-
-  char text[30];
-  for (int i = 0; i < radio.routingTableSize(); i++)
-  {
-    RouteNode *rNode = (*routingTableList)[i];
-    NetworkNode node = rNode->networkNode;
-    snprintf(text, 30, ("DEBUG RT |%X(%d)->%X|"), node.address, node.metric, rNode->via);
-    Board.println(String(text));
-  }
-
-  // Release routing table list usage.
-  routingTableList->releaseInUse();
-
-  // Delete the routing table list
-  delete routingTableList;
 }
 
 void vTaskSendLoRaMessage(void *pvParams)
@@ -271,8 +243,6 @@ void vTaskSendLoRaMessage(void *pvParams)
     // Se ambas tiverem, envia. Se só uma tiver e bater timeout, envia.
     if (receivedQueueSizeGt0 && sendQueueSizeGt0 || receivedQueueSizeGt0 && timeoutExceeded || sendQueueSizeGt0 && timeoutExceeded)
     {
-      // debugPrintRoutingTable();
-
       while (xQueueReceive(xQueueHandleReceivedFromLora, &buf, 0) == pdTRUE)
       {
         deserializeJson(lastDataDocument, (char *)buf);
@@ -322,7 +292,6 @@ void vTaskSendLoRaMessage(void *pvParams)
         }
         else
         {
-          // Board.print("Final Data: ");
           Board.println("[");
           for (JsonObject dataObj : dataArray)
           {
@@ -343,18 +312,15 @@ void vTaskReceiveLoRaMessage(void *)
 {
   while (true)
   {
-    /* Wait for the notification of vTaskReceiveLoRaMessage and enter blocking */
+    // Wait for the notification of vTaskReceiveLoRaMessage and enter blocking
     ulTaskNotifyTake(pdPASS, portMAX_DELAY);
 
     // Iterate through all the packets inside the Received User Packets FiFo
     while (radio.getReceivedQueueSize() > 0)
     {
-      // Board.println(String(LOCAL_ADDR, HEX) + ": Queue size: " + radio.getReceivedQueueSize());
 
       // Get the first element inside the Received User Packets FiFo
       AppPacket<uint8_t> *packet = radio.getNextAppPacket<uint8_t>();
-
-      // Board.println(String(LOCAL_ADDR, HEX) + ": <- " + String(packet->src, HEX) + " (Size: " + packet->payloadSize + ")");
 
       // Get the payload (string JSON como array de bytes)
       uint8_t *dPacket = (uint8_t *)packet->payload;
@@ -362,8 +328,8 @@ void vTaskReceiveLoRaMessage(void *)
 
       size_t copySize = payloadLength < MAX_PAYLOAD_SIZE ? payloadLength : MAX_PAYLOAD_SIZE - 1;
       memcpy(buf, dPacket, copySize);
-      buf[copySize] = (uint8_t)'\0';                                               // Adicionar null terminator para garantir string válida
-      Board.println(String(LOCAL_ADDR, HEX) + ": <- " + String(packet->src, HEX)); //  + ": " + String((char *)buf)
+      buf[copySize] = (uint8_t)'\0'; // Adicionar null terminator para garantir string válida
+      Board.println(String(LOCAL_ADDR, HEX) + ": <- " + String(packet->src, HEX));
 
       // Enviar o buffer completo para a fila
       xQueueSend(xQueueHandleReceivedFromLora, &buf, portMAX_DELAY);

@@ -336,7 +336,6 @@ void config()
   boardConfig.serialEnable = true;
   boardConfig.displayEnable = true;
   boardConfig.loraEnable = true;
-  // boardConfig.wifiEnable = true;
 
   Board.setConfig(boardConfig);
 
@@ -344,6 +343,7 @@ void config()
 
   HTLORAV3Config loraConfig = HTLORAV3::getDefaultConfig();
 
+  // Parâmetros alterados para diminuir o alcance de forma proposital
   loraConfig.frequency = 915E6;
   loraConfig.txOutPower = -3;
   loraConfig.spreadingFactor = 8;
@@ -354,23 +354,6 @@ void config()
   Board.lora->setOnReceiveTimeout(cLoraOnReceiveTimeout);
   Board.lora->setOnSendDone(cLoraOnSendDone);
   Board.lora->setOnSendTimeout(cLoraOnSendTimeout);
-
-  // === WiFi Config ===
-
-  // HTWIFIV3Config wifiConfig = HTWIFIV3::getDefaultConfig();
-
-  // wifiConfig.clientEnable = true;
-
-  // Board.wifi->setConfig(wifiConfig);
-
-  // === Client Config ===
-
-  // HTWIFIV3ClientConfig clientConfig = HTWIFIV3Client::getDefaultConfig();
-
-  // clientConfig.ssid = CLIENT_SSID;
-  // clientConfig.password = CLIENT_PASSWORD;
-
-  // Board.wifi->client->setConfig(clientConfig);
 }
 
 void setup()
